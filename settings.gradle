@@ -1,0 +1,3 @@
+include ':webservice'
+include ':common'
+rootProject.name = "Common"
