@@ -18,8 +18,13 @@ import okhttp3.Response;
 public class JSON extends HTTP {
     static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
+    public JSON() {
+        super();
+    }
+
     public JSON(String url) {
-        super(url);
+        super();
+        baseURL = url;
     }
 
     public interface Handler {

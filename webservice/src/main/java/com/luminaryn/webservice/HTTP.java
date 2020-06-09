@@ -6,23 +6,30 @@ import okhttp3.Request;
 
 abstract public class HTTP {
     public final OkHttpClient http;
-    public final String BASE_URL;
 
     public final static int LOG_NONE     = 0;
     public final static int LOG_ERRORS   = 1;
     public final static int LOG_WARNINGS = 2;
     public final static int LOG_DEBUG    = 3;
 
+    public String baseURL = "";
     public String TAG = "com.luminaryn.webservice";
     public int logLevel = LOG_NONE;
 
-    HTTP(String url) {
+    HTTP() {
         http = new OkHttpClient();
-        BASE_URL = url;
+    }
+
+    public void setBaseUrl(String url) {
+        baseURL = url;
+    }
+
+    public void setTag(String tag) {
+        TAG = tag;
     }
 
     public Request.Builder getRequest(String uri) {
-        String url = BASE_URL + uri;
+        String url = baseURL + uri;
         Request.Builder builder = new Request.Builder()
                 .url(url);
         return builder;
