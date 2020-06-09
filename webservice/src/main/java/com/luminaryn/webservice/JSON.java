@@ -18,7 +18,7 @@ import okhttp3.Response;
 public class JSON extends HTTP {
     static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-    JSON(String url) {
+    public JSON(String url) {
         super(url);
     }
 
@@ -47,27 +47,27 @@ public class JSON extends HTTP {
         }
     }
 
-    private RequestBody getBody(JSONObject data) {
+    public RequestBody getBody(JSONObject data) {
         return RequestBody.create(data.toString(), JSON);
     }
 
-    void GET(String uri, Handler handler) {
+    public void GET(String uri, Handler handler) {
         httpRequest(getRequest(uri).get().build(), new JSONCallback(handler, this));
     }
 
-    void POST(String uri, JSONObject data, Handler handler) {
+    public void POST(String uri, JSONObject data, Handler handler) {
         httpRequest(getRequest(uri).post(getBody(data)).build(), new JSONCallback(handler, this));
     }
 
-    void PUT(String uri, JSONObject data, Handler handler) {
+    public void PUT(String uri, JSONObject data, Handler handler) {
         httpRequest(getRequest(uri).put(getBody(data)).build(), new JSONCallback(handler, this));
     }
 
-    void DELETE(String uri, Handler handler) {
+    public void DELETE(String uri, Handler handler) {
         httpRequest(getRequest(uri).delete().build(), new JSONCallback(handler, this));
     }
 
-    JSONObject errorMsg(String msg) {
+    public JSONObject errorMsg(String msg) {
         JSONObject json = new JSONObject();
         try {
             json.put("success", false);
@@ -88,7 +88,7 @@ public class JSON extends HTTP {
         return json;
     }
 
-    JSONObject jsonResponse(Response response) {
+    public JSONObject jsonResponse(Response response) {
         if (!response.isSuccessful()) { return errorMsg("http_status"); }
         try {
             String body = response.body().string();

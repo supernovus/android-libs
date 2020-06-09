@@ -13,27 +13,27 @@ import android.util.Log;
 public class LongLog {
     static final int MAXLEN = 4000;
 
-    static final int VERBOSE = Log.VERBOSE;
-    static final int DEBUG   = Log.DEBUG;
-    static final int INFO    = Log.INFO;
-    static final int WARN    = Log.WARN;
-    static final int ERROR   = Log.ERROR;
-    static final int ASSERT  = Log.ASSERT;
+    public static final int VERBOSE = Log.VERBOSE;
+    public static final int DEBUG   = Log.DEBUG;
+    public static final int INFO    = Log.INFO;
+    public static final int WARN    = Log.WARN;
+    public static final int ERROR   = Log.ERROR;
+    public static final int ASSERT  = Log.ASSERT;
 
     /**
      * Override this in a subclass to have a default tag.
      */
-    static String TAG() { return null; }
+    public static String TAG() { return null; }
 
     /**
      * Override this in a subclass to change the default showPager value.
      */
-    static boolean SHOW_PAGER() { return true; }
+    public static boolean SHOW_PAGER() { return true; }
 
     /**
      * Override this in a subclass to change the default showLength value.
      */
-    static boolean SHOW_LENGTH() { return false; }
+    public static boolean SHOW_LENGTH() { return false; }
 
     public static ArrayList<String> splitLog (String msg, boolean showPager, boolean showLength) {
         ArrayList<String> msgs = new ArrayList<String>();
