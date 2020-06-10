@@ -34,30 +34,20 @@ public class JSON extends HTTP {
         super();
         baseURL = url;
     }
-
-    public static Handler getUIHandler() {
-        return new Handler(Looper.getMainLooper());
+    
+    public interface JSONResponseHandler extends ResponseHandler {
+        void handle(JSONObject data);
     }
 
-    public interface ResponseHandler {
-        void handle (JSONObject response);
-    }
-
-    public static abstract class UIResponseHandler implements ResponseHandler {
-        public abstract Runnable setup(JSONObject data);
-        Handler getUIHandler() {
-            return JSON.getUIHandler();
-        }
-        public void handle(JSONObject data) {
-            getUIHandler().post(this.setup(data));
-        }
-    }
-
+    public static abstract class JSONUIResponseHandler
+            extends UIResponseHandler
+            implements JSONResponseHandler {}
+    
     public static class JSONCallback implements Callback {
-        private ResponseHandler handler;
+        private JSONResponseHandler handler;
         public JSON ws;
 
-        JSONCallback(ResponseHandler handler, JSON ws) {
+        JSONCallback(JSONResponseHandler handler, JSON ws) {
             this.handler = handler;
             this.ws = ws;
         }
@@ -78,47 +68,47 @@ public class JSON extends HTTP {
         return RequestBody.create(data.toString(), TYPE_JSON);
     }
 
-    public void GET(String uri, ResponseHandler handler) {
+    public void GET(String uri, JSONResponseHandler handler) {
         sendRequest(makeRequest(uri).get().build(), new JSONCallback(handler, this));
     }
 
-    public void POST(String uri, RequestBody data, ResponseHandler handler) {
+    public void POST(String uri, RequestBody data, JSONResponseHandler handler) {
         sendRequest(makeRequest(uri).post(data).build(), new JSONCallback(handler, this));
     }
 
-    public void POST(String uri, JSONObject data, ResponseHandler handler) {
+    public void POST(String uri, JSONObject data, JSONResponseHandler handler) {
         POST(uri, jsonBody(data), handler);
     }
 
-    public void POST(String uri, Map<String,Object> data, ResponseHandler handler) {
+    public void POST(String uri, Map<String,Object> data, JSONResponseHandler handler) {
         POST(uri, new JSONObject(data), handler);
     }
 
-    public void PUT(String uri, RequestBody data, ResponseHandler handler) {
+    public void PUT(String uri, RequestBody data, JSONResponseHandler handler) {
         sendRequest(makeRequest(uri).put(data).build(), new JSONCallback(handler, this));
     }
 
-    public void PUT(String uri, JSONObject data, ResponseHandler handler) {
+    public void PUT(String uri, JSONObject data, JSONResponseHandler handler) {
         PUT(uri, jsonBody(data), handler);
     }
 
-    public void PUT(String uri, Map<String,Object> data, ResponseHandler handler) {
+    public void PUT(String uri, Map<String,Object> data, JSONResponseHandler handler) {
         PUT(uri, new JSONObject(data), handler);
     }
 
-    public void PATCH(String uri, RequestBody data, ResponseHandler handler) {
+    public void PATCH(String uri, RequestBody data, JSONResponseHandler handler) {
         sendRequest(makeRequest(uri).patch(data).build(), new JSONCallback(handler, this));
     }
 
-    public void PATCH(String uri, JSONObject data, ResponseHandler handler) {
+    public void PATCH(String uri, JSONObject data, JSONResponseHandler handler) {
         PATCH(uri, jsonBody(data), handler);
     }
 
-    public void PATCH(String uri, Map<String,Object> data, ResponseHandler handler) {
+    public void PATCH(String uri, Map<String,Object> data, JSONResponseHandler handler) {
         PATCH(uri, new JSONObject(data), handler);
     }
 
-    public void DELETE(String uri, ResponseHandler handler) {
+    public void DELETE(String uri, JSONResponseHandler handler) {
         sendRequest(makeRequest(uri).delete().build(), new JSONCallback(handler, this));
     }
 

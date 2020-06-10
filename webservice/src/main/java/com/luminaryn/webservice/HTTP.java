@@ -1,13 +1,25 @@
 package com.luminaryn.webservice;
 
-import java.io.File;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.IOException;
+
+import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
+import okio.BufferedSink;
+import okio.Okio;
 
 /**
  * Simple wrapper for OkHttp.
@@ -28,7 +40,7 @@ abstract public class HTTP {
     public String TAG = "com.luminaryn.webservice";
     public int logLevel = LOG_NONE;
 
-    HTTP() {
+    public HTTP() {
         http = new OkHttpClient();
     }
 
@@ -42,6 +54,10 @@ abstract public class HTTP {
 
     public void setLogLevel(int level) {
         logLevel = level;
+    }
+
+    public static Handler getUIHandler() {
+        return new Handler(Looper.getMainLooper());
     }
 
     public Request.Builder makeRequest(String uri) {
@@ -67,6 +83,49 @@ abstract public class HTTP {
 
     public void sendRequest(Request request, Callback callback) {
         http.newCall(request).enqueue(callback);
+    }
+
+    public static class FileDownloadCallback implements Callback {
+        private String targetPath;
+        public HTTP ws;
+
+        FileDownloadCallback(String targetPath, HTTP ws) {
+            this.targetPath = targetPath;
+            this.ws = ws;
+        }
+
+        @Override
+        public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            Log.e(ws.TAG, "Failure downloading file");
+        }
+
+        @Override
+        public void onResponse(@NotNull Call call, @NotNull Response response)
+        {
+            if (!response.isSuccessful()) return;
+            try {
+                File download = new File(targetPath);
+                BufferedSink sink = Okio.buffer(Okio.sink(download));
+                sink.writeAll(response.body().source());
+                sink.close();
+            } catch (IOException e) {
+                Log.v(ws.TAG, "IOException occurred trying to save downloaded file.");
+            }
+        }
+    }
+
+    public interface ResponseHandler {
+        void handle(Object data);
+    }
+
+    public static abstract class UIResponseHandler implements ResponseHandler {
+        public abstract Runnable setup(Object data);
+        public Handler getUIHandler() {
+            return HTTP.getUIHandler();
+        }
+        public void handle(Object data) {
+            getUIHandler().post(this.setup(data));
+        }
     }
 
 }
