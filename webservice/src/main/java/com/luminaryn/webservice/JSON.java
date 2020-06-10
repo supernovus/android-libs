@@ -43,7 +43,7 @@ public class JSON extends HTTP {
         void handle (JSONObject response);
     }
 
-    public abstract class UIResponseHandler implements ResponseHandler {
+    public static abstract class UIResponseHandler implements ResponseHandler {
         abstract Runnable run(JSONObject data);
         Handler getUIHandler() {
             return JSON.getUIHandler();
@@ -53,7 +53,7 @@ public class JSON extends HTTP {
         }
     }
 
-    public class JSONCallback implements Callback {
+    public static class JSONCallback implements Callback {
         private ResponseHandler handler;
         public JSON ws;
 
