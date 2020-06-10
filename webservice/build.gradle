@@ -34,5 +34,6 @@ private String generateVersionName() {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation 'org.conscrypt:conscrypt-android:2.4.0'
     implementation 'com.squareup.okhttp3:okhttp:4.7.2'
 }
