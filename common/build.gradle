@@ -1,8 +1,10 @@
 apply plugin: 'com.android.library'
 
+/*
 ext.versionMajor = 1;
 ext.versionMinor = 0;
 ext.versionPatch = 0;
+*/
 
 android {
     compileSdkVersion 29
@@ -11,8 +13,8 @@ android {
     defaultConfig {
         minSdkVersion 23
         targetSdkVersion 29
-        versionCode generateVersionCode()
-        versionName generateVersionName()
+//        versionCode generateVersionCode()
+//        versionName generateVersionName()
         consumerProguardFiles "consumer-rules.pro"
     }
 
@@ -24,6 +26,7 @@ android {
     }
 }
 
+/*
 private Integer generateVersionCode() {
     return ext.versionMajor * 1000000 + ext.versionMinor * 1000 + ext.versionPatch;
 }
@@ -31,6 +34,7 @@ private Integer generateVersionCode() {
 private String generateVersionName() {
     return "${ext.versionMajor}.${ext.versionMinor}.${ext.versionPatch}";
 }
+*/
 
 /*
 dependencies {
