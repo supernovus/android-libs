@@ -18,7 +18,7 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -32,6 +32,8 @@ private String generateVersionName() {
     return "${ext.versionMajor}.${ext.versionMinor}.${ext.versionPatch}";
 }
 
+/*
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
 }
+*/
