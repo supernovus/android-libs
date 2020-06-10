@@ -1,6 +1,9 @@
 package com.luminaryn.webservice;
 
+import java.io.File;
+
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -18,6 +21,8 @@ abstract public class HTTP {
     public final static int LOG_ERRORS   = 1;
     public final static int LOG_WARNINGS = 2;
     public final static int LOG_DEBUG    = 3;
+
+    public static final MediaType TYPE_DEFAULT_FILE = MediaType.get("application/octet-stream");
 
     public String baseURL = "";
     public String TAG = "com.luminaryn.webservice";
@@ -50,6 +55,14 @@ abstract public class HTTP {
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM);
         return builder;
+    }
+
+    public MultipartBody.Builder formBody(String fileFormName, File file, MediaType contentType) {
+        return formBody().addFormDataPart(fileFormName, file.getName(), RequestBody.create(file, contentType));
+    }
+
+    public MultipartBody.Builder formBody(String fileFormName, File file) {
+        return formBody(fileFormName, file, TYPE_DEFAULT_FILE);
     }
 
     public void sendRequest(Request request, Callback callback) {

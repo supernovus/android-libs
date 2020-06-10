@@ -1,5 +1,7 @@
 package com.luminaryn.webservice;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +24,7 @@ import okhttp3.Response;
  * Can be used standalone, or (preferrably) use a sub-class to add your method calls.
  */
 public class JSON extends HTTP {
-    static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    public static final MediaType TYPE_JSON = MediaType.get("application/json; charset=utf-8");
 
     public JSON() {
         super();
@@ -33,15 +35,29 @@ public class JSON extends HTTP {
         baseURL = url;
     }
 
-    public interface Handler {
+    public static Handler getUIHandler() {
+        return new Handler(Looper.getMainLooper());
+    }
+
+    public interface ResponseHandler {
         void handle (JSONObject response);
     }
 
-    class JSONCallback implements Callback {
-        private Handler handler;
+    public abstract class UIResponseHandler implements ResponseHandler {
+        abstract Runnable run(JSONObject data);
+        Handler getUIHandler() {
+            return JSON.getUIHandler();
+        }
+        public void handle(JSONObject data) {
+            getUIHandler().post(this.run(data));
+        }
+    }
+
+    public class JSONCallback implements Callback {
+        private ResponseHandler handler;
         public JSON ws;
 
-        JSONCallback(Handler handler, JSON ws) {
+        JSONCallback(ResponseHandler handler, JSON ws) {
             this.handler = handler;
             this.ws = ws;
         }
@@ -59,50 +75,50 @@ public class JSON extends HTTP {
     }
 
     public RequestBody jsonBody(JSONObject data) {
-        return RequestBody.create(data.toString(), JSON);
+        return RequestBody.create(data.toString(), TYPE_JSON);
     }
 
-    public void GET(String uri, Handler handler) {
+    public void GET(String uri, ResponseHandler handler) {
         sendRequest(makeRequest(uri).get().build(), new JSONCallback(handler, this));
     }
 
-    public void POST(String uri, RequestBody data, Handler handler) {
+    public void POST(String uri, RequestBody data, ResponseHandler handler) {
         sendRequest(makeRequest(uri).post(data).build(), new JSONCallback(handler, this));
     }
 
-    public void POST(String uri, JSONObject data, Handler handler) {
+    public void POST(String uri, JSONObject data, ResponseHandler handler) {
         POST(uri, jsonBody(data), handler);
     }
 
-    public void POST(String uri, Map<String,Object> data, Handler handler) {
+    public void POST(String uri, Map<String,Object> data, ResponseHandler handler) {
         POST(uri, new JSONObject(data), handler);
     }
 
-    public void PUT(String uri, RequestBody data, Handler handler) {
+    public void PUT(String uri, RequestBody data, ResponseHandler handler) {
         sendRequest(makeRequest(uri).put(data).build(), new JSONCallback(handler, this));
     }
 
-    public void PUT(String uri, JSONObject data, Handler handler) {
+    public void PUT(String uri, JSONObject data, ResponseHandler handler) {
         PUT(uri, jsonBody(data), handler);
     }
 
-    public void PUT(String uri, Map<String,Object> data, Handler handler) {
+    public void PUT(String uri, Map<String,Object> data, ResponseHandler handler) {
         PUT(uri, new JSONObject(data), handler);
     }
 
-    public void PATCH(String uri, RequestBody data, Handler handler) {
+    public void PATCH(String uri, RequestBody data, ResponseHandler handler) {
         sendRequest(makeRequest(uri).patch(data).build(), new JSONCallback(handler, this));
     }
 
-    public void PATCH(String uri, JSONObject data, Handler handler) {
+    public void PATCH(String uri, JSONObject data, ResponseHandler handler) {
         PATCH(uri, jsonBody(data), handler);
     }
 
-    public void PATCH(String uri, Map<String,Object> data, Handler handler) {
+    public void PATCH(String uri, Map<String,Object> data, ResponseHandler handler) {
         PATCH(uri, new JSONObject(data), handler);
     }
 
-    public void DELETE(String uri, Handler handler) {
+    public void DELETE(String uri, ResponseHandler handler) {
         sendRequest(makeRequest(uri).delete().build(), new JSONCallback(handler, this));
     }
 
