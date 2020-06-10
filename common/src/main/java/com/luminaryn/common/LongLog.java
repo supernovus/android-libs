@@ -20,20 +20,8 @@ public class LongLog {
     public static final int ERROR   = Log.ERROR;
     public static final int ASSERT  = Log.ASSERT;
 
-    /**
-     * Override this in a subclass to have a default tag.
-     */
-    public static String TAG() { return null; }
-
-    /**
-     * Override this in a subclass to change the default showPager value.
-     */
-    public static boolean SHOW_PAGER() { return true; }
-
-    /**
-     * Override this in a subclass to change the default showLength value.
-     */
-    public static boolean SHOW_LENGTH() { return false; }
+    public static boolean SHOW_PAGER  = true;
+    public static boolean SHOW_LENGTH = false;
 
     public static ArrayList<String> splitLog (String msg, boolean showPager, boolean showLength) {
         ArrayList<String> msgs = new ArrayList<String>();
@@ -78,7 +66,7 @@ public class LongLog {
     }
 
     public static int log (int prio, String tag, String msg) {
-        return log(prio, tag, msg, SHOW_PAGER(), SHOW_LENGTH());
+        return log(prio, tag, msg, SHOW_PAGER, SHOW_LENGTH);
     }
 
     public static int v (String tag, String msg) {
@@ -99,26 +87,6 @@ public class LongLog {
 
     public static int e (String tag, String msg) {
         return log(ERROR, tag, msg);
-    }
-
-    public static int v (String msg) {
-        return v(TAG(), msg);
-    }
-
-    public static int d (String msg) {
-        return d(TAG(), msg);
-    }
-
-    public static int i (String msg) {
-        return i(TAG(), msg);
-    }
-
-    public static int w (String msg) {
-        return w(TAG(), msg);
-    }
-
-    public static int e (String msg) {
-        return e(TAG(), msg);
     }
 
 }
