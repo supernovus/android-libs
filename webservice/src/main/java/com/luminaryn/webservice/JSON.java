@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -15,6 +16,11 @@ import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+/**
+ * A class for communicating with JSON-based web services.
+ *
+ * Can be used standalone, or (preferrably) use a sub-class to add your method calls.
+ */
 public class JSON extends HTTP {
     static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
@@ -52,24 +58,52 @@ public class JSON extends HTTP {
         }
     }
 
-    public RequestBody getBody(JSONObject data) {
+    public RequestBody jsonBody(JSONObject data) {
         return RequestBody.create(data.toString(), JSON);
     }
 
     public void GET(String uri, Handler handler) {
-        httpRequest(getRequest(uri).get().build(), new JSONCallback(handler, this));
+        sendRequest(makeRequest(uri).get().build(), new JSONCallback(handler, this));
+    }
+
+    public void POST(String uri, RequestBody data, Handler handler) {
+        sendRequest(makeRequest(uri).post(data).build(), new JSONCallback(handler, this));
     }
 
     public void POST(String uri, JSONObject data, Handler handler) {
-        httpRequest(getRequest(uri).post(getBody(data)).build(), new JSONCallback(handler, this));
+        POST(uri, jsonBody(data), handler);
+    }
+
+    public void POST(String uri, Map<String,Object> data, Handler handler) {
+        POST(uri, new JSONObject(data), handler);
+    }
+
+    public void PUT(String uri, RequestBody data, Handler handler) {
+        sendRequest(makeRequest(uri).put(data).build(), new JSONCallback(handler, this));
     }
 
     public void PUT(String uri, JSONObject data, Handler handler) {
-        httpRequest(getRequest(uri).put(getBody(data)).build(), new JSONCallback(handler, this));
+        PUT(uri, jsonBody(data), handler);
+    }
+
+    public void PUT(String uri, Map<String,Object> data, Handler handler) {
+        PUT(uri, new JSONObject(data), handler);
+    }
+
+    public void PATCH(String uri, RequestBody data, Handler handler) {
+        sendRequest(makeRequest(uri).patch(data).build(), new JSONCallback(handler, this));
+    }
+
+    public void PATCH(String uri, JSONObject data, Handler handler) {
+        PATCH(uri, jsonBody(data), handler);
+    }
+
+    public void PATCH(String uri, Map<String,Object> data, Handler handler) {
+        PATCH(uri, new JSONObject(data), handler);
     }
 
     public void DELETE(String uri, Handler handler) {
-        httpRequest(getRequest(uri).delete().build(), new JSONCallback(handler, this));
+        sendRequest(makeRequest(uri).delete().build(), new JSONCallback(handler, this));
     }
 
     public JSONObject errorMsg(String msg) {
@@ -78,6 +112,8 @@ public class JSON extends HTTP {
             json.put("success", false);
             JSONArray errors = new JSONArray();
             if (msg.isEmpty()) {
+                if (logLevel >= LOG_WARNINGS)
+                    Log.d(TAG, "Empty message passed to errorMsg");
                 errors.put("unknown_error");
             }
             else {
