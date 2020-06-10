@@ -44,12 +44,12 @@ public class JSON extends HTTP {
     }
 
     public static abstract class UIResponseHandler implements ResponseHandler {
-        abstract Runnable run(JSONObject data);
+        public abstract Runnable setup(JSONObject data);
         Handler getUIHandler() {
             return JSON.getUIHandler();
         }
         public void handle(JSONObject data) {
-            getUIHandler().post(this.run(data));
+            getUIHandler().post(this.setup(data));
         }
     }
 
