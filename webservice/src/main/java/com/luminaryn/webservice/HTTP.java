@@ -88,10 +88,18 @@ abstract public class HTTP {
     public static class FileDownloadCallback implements Callback {
         private String targetPath;
         public HTTP ws;
+        public FileResponseHandler handler;
 
         FileDownloadCallback(String targetPath, HTTP ws) {
             this.targetPath = targetPath;
             this.ws = ws;
+            this.handler = null;
+        }
+
+        FileDownloadCallback(String targetPath, HTTP ws, FileResponseHandler handler) {
+            this.targetPath = targetPath;
+            this.ws = ws;
+            this.handler = handler;
         }
 
         @Override
@@ -114,17 +122,17 @@ abstract public class HTTP {
         }
     }
 
-    public interface ResponseHandler {
-        void handle(Object data);
+    public interface FileResponseHandler {
+        void handle(File file);
     }
 
-    public static abstract class UIResponseHandler implements ResponseHandler {
-        public abstract Runnable setup(Object data);
+    public static abstract class FileUIResponseHandler implements FileResponseHandler {
+        public abstract Runnable setup(File file);
         public Handler getUIHandler() {
             return HTTP.getUIHandler();
         }
-        public void handle(Object data) {
-            getUIHandler().post(this.setup(data));
+        public void handle(File file) {
+            getUIHandler().post(this.setup(file));
         }
     }
 

@@ -35,15 +35,18 @@ public class JSON extends HTTP {
         baseURL = url;
     }
     
-    public interface JSONResponseHandler extends ResponseHandler {
+    public interface JSONResponseHandler {
         void handle(JSONObject data);
     }
 
-    public static abstract class JSONUIResponseHandler
-            extends UIResponseHandler
-            implements JSONResponseHandler
-    {
+    public static abstract class JSONUIResponseHandler implements JSONResponseHandler {
         public abstract Runnable setup(JSONObject data);
+        public Handler getUIHandler() {
+            return HTTP.getUIHandler();
+        }
+        public void handle(JSONObject data) {
+            getUIHandler().post(this.setup(data));
+        }
     }
     
     public static class JSONCallback implements Callback {
