@@ -116,6 +116,9 @@ abstract public class HTTP {
                 BufferedSink sink = Okio.buffer(Okio.sink(download));
                 sink.writeAll(response.body().source());
                 sink.close();
+                if (handler != null) {
+                    handler.handle(download);
+                }
             } catch (IOException e) {
                 Log.v(ws.TAG, "IOException occurred trying to save downloaded file.");
             }
