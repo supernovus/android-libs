@@ -41,7 +41,10 @@ public class JSON extends HTTP {
 
     public static abstract class JSONUIResponseHandler
             extends UIResponseHandler
-            implements JSONResponseHandler {}
+            implements JSONResponseHandler
+    {
+        public abstract Runnable setup(JSONObject data);
+    }
     
     public static class JSONCallback implements Callback {
         private JSONResponseHandler handler;
