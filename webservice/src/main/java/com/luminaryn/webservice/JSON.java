@@ -10,6 +10,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 
 import okhttp3.Call;
@@ -60,7 +61,7 @@ public class JSON extends HTTP {
 
         @Override
         public void onFailure(@NotNull Call call, @NotNull IOException e) {
-            handler.handle(ws.errorMsg("http_failure"));
+            handler.handle(ws.errorMsg(new String[]{"http_failure", e.getMessage()}));
         }
 
         @Override
@@ -118,6 +119,38 @@ public class JSON extends HTTP {
         sendRequest(makeRequest(uri).delete().build(), new JSONCallback(handler, this));
     }
 
+    private void jsonBuildErr(JSONException e) {
+        if (logLevel >= LOG_ERRORS) {
+            Log.d(TAG, "JSON error when building error object: "+e.getMessage());
+        }
+    }
+
+    public JSONObject errorMsg(String[] msgs) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("success", false);
+            JSONArray errors = new JSONArray(msgs);
+            json.put("errors", errors);
+        } catch (JSONException e)
+        {
+            jsonBuildErr(e);
+        }
+        return json;
+    }
+
+    public JSONObject errorMsg(Collection msgs) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("success", false);
+            JSONArray errors = new JSONArray(msgs);
+            json.put("errors", errors);
+        } catch (JSONException e)
+        {
+            jsonBuildErr(e);
+        }
+        return json;
+    }
+
     public JSONObject errorMsg(String msg) {
         JSONObject json = new JSONObject();
         try {
@@ -134,9 +167,7 @@ public class JSON extends HTTP {
             json.put("errors", errors);
         } catch (JSONException e)
         {
-            if (logLevel >= LOG_ERRORS)
-                Log.d(TAG, "JSON error when building error object, WTF?");
-
+            jsonBuildErr(e);
         }
         return json;
     }
