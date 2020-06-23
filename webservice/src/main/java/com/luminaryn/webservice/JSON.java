@@ -10,7 +10,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import okhttp3.Call;
@@ -183,6 +185,23 @@ public class JSON extends HTTP {
         }
         catch (IOException e) { return errorMsg("response_body_parsing"); }
         catch (JSONException e) { return errorMsg("json_parsing"); }
+    }
+
+    public HashMap<String, Object> hashException(Exception e) {
+        HashMap<String, Object> errHash = new HashMap<>();
+        errHash.put("message", e.getMessage());
+        ArrayList<HashMap<String,Object>> errList = new ArrayList<>();
+        StackTraceElement[] stack = e.getStackTrace();
+        for (StackTraceElement stackTraceElement : stack) {
+            HashMap<String, Object> stackItem = new HashMap<>();
+            stackItem.put("class", stackTraceElement.getClassName());
+            stackItem.put("file", stackTraceElement.getFileName());
+            stackItem.put("line", stackTraceElement.getLineNumber());
+            stackItem.put("method", stackTraceElement.getMethodName());
+            errList.add(stackItem);
+        }
+        errHash.put("stack", errList);
+        return errHash;
     }
 
 }
