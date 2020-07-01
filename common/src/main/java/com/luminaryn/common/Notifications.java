@@ -46,11 +46,11 @@ public class Notifications {
     }
 
     public PendingIntent createBroadcast (String action) {
-        return createBroadcast(action, 0, 0);
+        return createBroadcast(action, 0, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     public PendingIntent createBroadcast (String action, Bundle extras) {
-        return createBroadcast(action, extras, 0, 0);
+        return createBroadcast(action, extras, 0, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     public PendingIntent createBroadcast (Intent intent) {

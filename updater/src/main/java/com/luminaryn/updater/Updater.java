@@ -53,6 +53,16 @@ public class Updater extends JSON {
     public String PROVIDER = TAG + ".fileprovider";
 
     /**
+     * The Prefix for Intent extras
+     */
+    public String EXTRAPREFIX = TAG;
+
+    /**
+     * The name for the 'url' Intent extra parameter.
+     */
+    public String URLEXTRA = "URL";
+
+    /**
      * The notification id.
      */
     public int NOTIFICATION_ID = 1;
@@ -178,6 +188,14 @@ public class Updater extends JSON {
     }
 
     /**
+     * Return the extra key for the "url" parameter.
+     * This is EXTRAPREFIX + "." + URLEXTRA
+     */
+    public String URL () {
+        return EXTRAPREFIX + "." + URLEXTRA;
+    }
+
+    /**
      * A quick way to assign the notification title, message, and icon.
      *
      * @param title
@@ -218,8 +236,12 @@ public class Updater extends JSON {
             Notifications notifications = new Notifications(context, broadcastClass);
             String title = context.getString(notificationTitle);
             String message = context.getString(notificationMessage, currentVersionName, newestVersionName);
+            LongLog.d(TAG, "Notification title: "+title);
+            LongLog.d(TAG, "Notification message: "+message);
+            LongLog.d(TAG, "Newest URL: "+newestUrl);
             Bundle bundle = new Bundle();
-            bundle.putString("url", newestUrl);
+            bundle.putString(URL(), newestUrl);
+            LongLog.d(TAG, "Extras Bundle: "+bundle.toString());
             PendingIntent intent = notifications.createBroadcast(ACTION, bundle);
             Notification.Builder not = notifications.createNotification(title, message, PRIO, notificationIcon, intent);
             notifications.show(not, NOTIFICATION_ID);
@@ -345,9 +367,11 @@ public class Updater extends JSON {
      * @param intent The intent passed to the onReceive() method.
      */
     public boolean downloadIntent (Intent intent) {
+        LongLog.d(TAG,"downloadIntent()");
         Bundle bundle = intent.getExtras();
+        LongLog.d(TAG, "Extras Bundle: "+(bundle != null ? bundle.toString() : "null"));
         if (bundle != null) {
-            String url = bundle.getString("url");
+            String url = bundle.getString(URL());
             if (url != null) {
                 downloadUpdate(url);
                 return true;
