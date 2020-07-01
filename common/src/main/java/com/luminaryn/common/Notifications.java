@@ -5,8 +5,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 
-// TODO: Add Notification Channels for newer version of Android!
+// TODO: Add Notification Channels for newer versions of Android!
 public class Notifications {
     private Context context;
     private Class broadcastClass;
@@ -20,15 +21,40 @@ public class Notifications {
         return (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
-    public PendingIntent createAction (String action, int requestCode, int flags) {
-        Intent updateIntent = new Intent(context, broadcastClass);
-        updateIntent.setAction(action);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, updateIntent, flags);
-        return pendingIntent;
+    public Intent createIntent () {
+        return new Intent(context, broadcastClass);
     }
 
-    public PendingIntent createAction (String action) {
-        return createAction(action, 0, 0);
+    public Intent createIntent (String action) {
+        return createIntent().setAction(action);
+    }
+
+    public Intent createIntent (String action, Bundle extras) {
+        return createIntent(action).putExtras(extras);
+    }
+
+    public PendingIntent createBroadcast (Intent intent, int requestCode, int flags) {
+        return PendingIntent.getBroadcast(context, requestCode, intent, flags);
+    }
+
+    public PendingIntent createBroadcast (String action, int requestCode, int flags) {
+        return createBroadcast(createIntent(action), requestCode, flags);
+    }
+
+    public PendingIntent createBroadcast (String action, Bundle extras, int requestCode, int flags) {
+        return createBroadcast(createIntent(action, extras), requestCode, flags);
+    }
+
+    public PendingIntent createBroadcast (String action) {
+        return createBroadcast(action, 0, 0);
+    }
+
+    public PendingIntent createBroadcast (String action, Bundle extras) {
+        return createBroadcast(action, extras, 0, 0);
+    }
+
+    public PendingIntent createBroadcast (Intent intent) {
+        return createBroadcast(intent, 0, 0);
     }
 
     public Notification.Builder createNotification (String title, String bodyText, int prio, int icon) {
@@ -44,15 +70,12 @@ public class Notifications {
         return createNotification(title, bodyText, Notification.PRIORITY_DEFAULT, icon);
     }
 
-    public Notification.Builder createNotification (String title, String bodyText, int prio, int icon, String action) {
-        Notification.Builder builder = createNotification(title, bodyText, prio, icon);
-        PendingIntent intent = createAction(action);
-        builder.setContentIntent(intent).setAutoCancel(true);
-        return builder;
+    public Notification.Builder createNotification (String title, String bodyText, int prio, int icon, PendingIntent pendingIntent) {
+        return createNotification(title, bodyText, prio, icon).setContentIntent(pendingIntent);
     }
 
-    public Notification.Builder createNotification (String title, String bodyText, int icon, String action) {
-        return createNotification(title, bodyText, Notification.PRIORITY_DEFAULT, icon, action);
+    public Notification.Builder createNotification (String title, String bodyText, int icon, PendingIntent pendingIntent) {
+        return createNotification(title, bodyText, icon).setContentIntent(pendingIntent);
     }
 
     public void show (Notification.Builder builder, int id) {

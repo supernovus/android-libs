@@ -1,6 +1,7 @@
 package com.luminaryn.updater;
 
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -217,10 +218,10 @@ public class Updater extends JSON {
             Notifications notifications = new Notifications(context, broadcastClass);
             String title = context.getString(notificationTitle);
             String message = context.getString(notificationMessage, currentVersionName, newestVersionName);
-            Notification.Builder not = notifications.createNotification(title, message, PRIO, notificationIcon, ACTION);
             Bundle bundle = new Bundle();
             bundle.putString("url", newestUrl);
-            not.addExtras(bundle);
+            PendingIntent intent = notifications.createBroadcast(ACTION, bundle);
+            Notification.Builder not = notifications.createNotification(title, message, PRIO, notificationIcon, intent);
             notifications.show(not, NOTIFICATION_ID);
         }
     }
@@ -343,10 +344,22 @@ public class Updater extends JSON {
      *
      * @param intent The intent passed to the onReceive() method.
      */
-    public void downloadIntent (Intent intent) {
+    public boolean downloadIntent (Intent intent) {
         Bundle bundle = intent.getExtras();
-        String url = bundle.getString("url");
-        downloadUpdate(url);
+        if (bundle != null) {
+            String url = bundle.getString("url");
+            if (url != null) {
+                downloadUpdate(url);
+                return true;
+            }
+            else {
+                logError("The 'url' property in Intent extras was null");
+            }
+        }
+        else {
+            logError("The Intent extras Bundle was null");
+        }
+        return false;
     }
 
     /**
@@ -355,8 +368,7 @@ public class Updater extends JSON {
      */
     public boolean downloadIfBroadcast (Intent intent) {
         if (checkBroadcast(intent)) {
-            downloadIntent(intent);
-            return true;
+            return downloadIntent(intent);
         }
         return false;
     }
