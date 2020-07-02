@@ -68,4 +68,14 @@ public class Images {
         return base64Encode(bitmap, 100);
     }
 
+    public static byte[] toJPEG (Bitmap bitmap, @NonNull int quality) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
+        return stream.toByteArray();
+    }
+
+    public static byte[] toJPEG (Bitmap bitmap) {
+        return toJPEG(bitmap, 100);
+    }
+
 }

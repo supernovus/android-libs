@@ -77,8 +77,24 @@ abstract public class HTTP {
         return formBody().addFormDataPart(fileFormName, file.getName(), RequestBody.create(file, contentType));
     }
 
+    public MultipartBody.Builder formBody(String fileFormName, File file, String contentType) {
+        return formBody(fileFormName, file, MediaType.get(contentType));
+    }
+
     public MultipartBody.Builder formBody(String fileFormName, File file) {
         return formBody(fileFormName, file, TYPE_DEFAULT_FILE);
+    }
+
+    public MultipartBody.Builder formBody(String fileFormName, String fileName, byte[] byteArray, MediaType contentType) {
+        return formBody().addFormDataPart(fileFormName, fileName, RequestBody.create(byteArray, contentType));
+    }
+
+    public MultipartBody.Builder formBody(String fileFormName, String fileName, byte[] byteArray, String contentType) {
+        return formBody(fileFormName, fileName, byteArray, MediaType.get(contentType));
+    }
+
+    public MultipartBody.Builder formBody(String fileFormName, String fileName, byte[] byteArray) {
+        return formBody(fileFormName, fileName, byteArray, TYPE_DEFAULT_FILE);
     }
 
     public void sendRequest(Request request, Callback callback) {
