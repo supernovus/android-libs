@@ -503,7 +503,7 @@ public class Updater extends JSON {
         Uri uri = FileProvider.getUriForFile(context.getApplicationContext(), PROVIDER, file);
         Intent intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
         intent.setData(uri);
-        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 
