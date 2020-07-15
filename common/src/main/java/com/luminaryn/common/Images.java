@@ -21,7 +21,31 @@ import java.util.Objects;
 
 public class Images {
 
-    private static void saveImage(@NonNull final Context context, @NonNull final Bitmap bitmap,
+    public static void saveImage(@NonNull final Bitmap bitmap,
+                                 @NonNull final File file,
+                                 @NonNull final Bitmap.CompressFormat format,
+                                 @NonNull final int quality) throws IOException {
+        saveImage(bitmap, new FileOutputStream(file), format, quality);
+    }
+
+    public static void saveImage(@NonNull final Bitmap bitmap,
+                                 @NonNull final OutputStream output,
+                                 @NonNull final Bitmap.CompressFormat format,
+                                 @NonNull final int quality) {
+        bitmap.compress(format, quality, output);
+    }
+
+    public static void saveImage(@NonNull final Bitmap bitmap,
+                                 @NonNull final OutputStream output) {
+        saveImage(bitmap, output, Bitmap.CompressFormat.JPEG, 100);
+    }
+
+    public static void saveImage(@NonNull final Bitmap bitmap,
+                                 @NonNull final File file) throws IOException {
+        saveImage(bitmap, file, Bitmap.CompressFormat.JPEG, 100);
+    }
+
+    public static void saveImage(@NonNull final Context context, @NonNull final Bitmap bitmap,
                            @NonNull final Bitmap.CompressFormat format, @NonNull final String mimeType,
                            @NonNull final int quality, @NonNull final String filename) throws IOException {
         OutputStream fos;
@@ -68,10 +92,14 @@ public class Images {
         return base64Encode(bitmap, 100);
     }
 
-    public static byte[] toJPEG (Bitmap bitmap, @NonNull int quality) {
+    public static ByteArrayOutputStream toJPEGStream(Bitmap bitmap, @NonNull int quality) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
-        return stream.toByteArray();
+        return stream;
+    }
+
+    public static byte[] toJPEG (Bitmap bitmap, @NonNull int quality) {
+        return toJPEGStream(bitmap, quality).toByteArray();
     }
 
     public static byte[] toJPEG (Bitmap bitmap) {
