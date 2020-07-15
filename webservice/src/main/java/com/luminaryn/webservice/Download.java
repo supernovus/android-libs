@@ -19,6 +19,19 @@ import okio.Okio;
  * except provide some extra classes providing a simple callback
  * interface for handling file downloads. This requires that we have
  * WRITE access to the target location!
+ *
+ * Example usage in your web service class:
+ *
+ * public void downloadFile(String url, String filepath, Download.FilesResponseHandler handler) {
+ *     sendRequest(new Request.Builder().url(url).build(),
+ *      new Download.FileCallback(filepath, this, handler));
+ * }
+ *
+ * public void downloadFile(String url, String filepath) {
+ *     sendRequest(new Request.Builder().url(url).build(),
+ *      new Download.FileCallback(filepath, this));
+ * }
+ *
  */
 public class Download {
     public static class FileCallback implements Callback {
@@ -26,13 +39,13 @@ public class Download {
         public HTTP ws;
         public FileResponseHandler handler;
 
-        FileCallback(String targetPath, HTTP ws) {
+        public FileCallback(String targetPath, HTTP ws) {
             this.targetPath = targetPath;
             this.ws = ws;
             this.handler = null;
         }
 
-        FileCallback(String targetPath, HTTP ws, FileResponseHandler handler) {
+        public FileCallback(String targetPath, HTTP ws, FileResponseHandler handler) {
             this.targetPath = targetPath;
             this.ws = ws;
             this.handler = handler;
@@ -40,7 +53,7 @@ public class Download {
 
         @Override
         public void onFailure(@NotNull Call call, @NotNull IOException e) {
-            Log.e(ws.TAG, "Failure downloading file");
+            Log.e(ws.TAG, "Failure downloading file: "+e.getMessage());
         }
 
         @Override
@@ -55,8 +68,8 @@ public class Download {
                 if (handler != null) {
                     handler.handle(download);
                 }
-            } catch (IOException e) {
-                Log.v(ws.TAG, "IOException occurred trying to save downloaded file.");
+            } catch (Exception e) {
+                Log.v(ws.TAG, "Exception occurred trying to save downloaded file: "+e.getMessage());
             }
         }
     }
