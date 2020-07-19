@@ -1,7 +1,6 @@
 package com.luminaryn.webservice;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import org.jetbrains.annotations.NotNull;
@@ -34,10 +33,13 @@ public class JSON extends HTTP {
     }
 
     public JSON(String url) {
-        super();
-        baseURL = url;
+        super(url);
     }
-    
+
+    protected JSON(Builder builder) {
+        super(builder);
+    }
+
     public interface JSONResponseHandler {
         void handle(JSONObject data);
     }
@@ -63,7 +65,7 @@ public class JSON extends HTTP {
 
         @Override
         public void onFailure(@NotNull Call call, @NotNull IOException e) {
-            handler.handle(ws.errorMsg(new String[]{"http_failure", e.getMessage()}));
+            handler.handle(ws.errorMsg(new String[]{"internal", "http_failure", e.getMessage()}));
         }
 
         @Override
@@ -123,7 +125,7 @@ public class JSON extends HTTP {
 
     private void jsonBuildErr(JSONException e) {
         if (logLevel >= LOG_ERRORS) {
-            Log.d(TAG, "JSON error when building error object: "+e.getMessage());
+            Log.e(TAG, "JSON error when building error object: "+e.getMessage());
         }
     }
 
@@ -160,7 +162,7 @@ public class JSON extends HTTP {
             JSONArray errors = new JSONArray();
             if (msg.isEmpty()) {
                 if (logLevel >= LOG_WARNINGS)
-                    Log.d(TAG, "Empty message passed to errorMsg");
+                    Log.w(TAG, "Empty message passed to errorMsg");
                 errors.put("unknown_error");
             }
             else {
@@ -175,7 +177,7 @@ public class JSON extends HTTP {
     }
 
     public JSONObject jsonResponse(Response response) {
-        if (!response.isSuccessful()) { return errorMsg("http_status"); }
+        if (!response.isSuccessful()) { return errorMsg(new String[]{"internal", "http_status", String.valueOf(response.code())}); }
         try {
             String body = response.body().string();
             if (logLevel >= LOG_DEBUG)
@@ -183,8 +185,8 @@ public class JSON extends HTTP {
             JSONObject json = new JSONObject(body);
             return json;
         }
-        catch (IOException e) { return errorMsg("response_body_parsing"); }
-        catch (JSONException e) { return errorMsg("json_parsing"); }
+        catch (IOException e) { return errorMsg(new String[]{"internal", "exception", "response_body_parsing", e.getMessage()}); }
+        catch (JSONException e) { return errorMsg(new String[]{"internal", "exception", "json_parsing", e.getMessage()}); }
     }
 
     public HashMap<String, Object> hashException(Exception e) {
@@ -202,6 +204,11 @@ public class JSON extends HTTP {
         }
         errHash.put("stack", errList);
         return errHash;
+    }
+
+    public static class Builder extends HTTP.Builder<Builder> {
+        protected Builder getThis() { return this; }
+        public JSON build () { return new JSON(this); }
     }
 
 }
