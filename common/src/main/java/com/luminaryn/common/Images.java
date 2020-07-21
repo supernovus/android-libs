@@ -66,17 +66,17 @@ public class Images {
         Objects.requireNonNull(fos).close();
     }
 
-    public static void saveImage(Context context, Bitmap bitmap, @NonNull int quality, @NonNull String filename) throws IOException {
+    public static void saveImage(@NonNull Context context, @NonNull Bitmap bitmap, @NonNull int quality, @NonNull String filename) throws IOException {
         final Bitmap.CompressFormat format = Bitmap.CompressFormat.JPEG;
         final String mimeType = "image/jpeg";
         saveImage(context, bitmap, format, mimeType, quality, filename);
     }
 
-    public static void saveImage(Context context, Bitmap bitmap, @NonNull String filename) throws IOException {
+    public static void saveImage(@NonNull Context context, @NonNull Bitmap bitmap, @NonNull String filename) throws IOException {
         saveImage(context, bitmap, 100, filename);
     }
 
-    public static String base64Encode (Bitmap bitmap, @NonNull Bitmap.CompressFormat format, @NonNull int quality) throws IOException {
+    public static String base64Encode (@NonNull Bitmap bitmap, @NonNull Bitmap.CompressFormat format, @NonNull int quality) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         bitmap.compress(format, quality, bos);
         String base64 = Base64.encodeToString(bos.toByteArray(), Base64.DEFAULT);
@@ -84,25 +84,25 @@ public class Images {
         return base64;
     }
 
-    public static String base64Encode (Bitmap bitmap, @NonNull int quality) throws IOException {
+    public static String base64Encode (@NonNull Bitmap bitmap, @NonNull int quality) throws IOException {
         return base64Encode(bitmap, Bitmap.CompressFormat.JPEG, quality);
     }
 
-    public static String base64Encode (Bitmap bitmap) throws IOException {
+    public static String base64Encode (@NonNull Bitmap bitmap) throws IOException {
         return base64Encode(bitmap, 100);
     }
 
-    public static ByteArrayOutputStream toJPEGStream(Bitmap bitmap, @NonNull int quality) {
+    public static ByteArrayOutputStream toJPEGStream(@NonNull Bitmap bitmap, @NonNull int quality) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
         return stream;
     }
 
-    public static byte[] toJPEG (Bitmap bitmap, @NonNull int quality) {
+    public static byte[] toJPEG (@NonNull Bitmap bitmap, @NonNull int quality) {
         return toJPEGStream(bitmap, quality).toByteArray();
     }
 
-    public static byte[] toJPEG (Bitmap bitmap) {
+    public static byte[] toJPEG (@NonNull Bitmap bitmap) {
         return toJPEG(bitmap, 100);
     }
 
