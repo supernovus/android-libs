@@ -37,7 +37,6 @@ public class Encoder {
             return toHex(digestBytes);
     }
 
-
     public void add (byte[] bytes)
     {
         digest.update(bytes);
@@ -57,34 +56,15 @@ public class Encoder {
         return text.getText().toString().getBytes();
     }
 
-    public static String urlize(String text, boolean useTildes) {
-        text = text.replace('+', '-');
-        text = text.replace('/', '_');
-        if (useTildes)
-            text = text.replace('=', '~');
-        return text;
-    }
-
     /**
-     * A special version of encodeDigest that always uses BASE64, and
-     * passes it through urlize() to replace characters that might be
-     * problematic.
-     *
-     * As per my other similar libraries in PHP and Javascript:
-     *
-     *  '+' becomes '-'
-     *  '/' becomes '_'
-     *
-     * If useTildes is true, then:
-     *
-     *  '=' becomes '~'
+     * A version of encode() that uses the Safe64 encoding algorithm.
      *
      * @param useTildes Replace '=' with '~'
      * @return The URL safe encoded string.
      */
     public String encodeForUrl (boolean useTildes)
     {
-        return urlize(encodeDigest(BASE64), useTildes);
+        return Safe64.urlize(encodeDigest(BASE64), useTildes);
     }
 
 }
