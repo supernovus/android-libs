@@ -21,6 +21,12 @@ open class JSON : HTTP {
     constructor(url: String?) : super(url!!) {}
     protected constructor(builder: Builder?) : super(builder!!) {}
 
+    var headers: Headers? = null;
+
+    fun setHeaders(headers: Headers.Builder) {
+        this.headers = headers.build()
+    }
+
     interface JSONResponseHandler {
         fun handle(data: JSONObject)
     }
@@ -50,11 +56,11 @@ open class JSON : HTTP {
     }
 
     fun GET(uri: String?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!).get().build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri!!, headers).get().build(), JSONCallback(handler, this))
     }
 
     fun POST(uri: String?, data: RequestBody?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!).post(data!!).build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri!!, headers).post(data!!).build(), JSONCallback(handler, this))
     }
 
     fun POST(uri: String?, data: JSONObject, handler: JSONResponseHandler) {
@@ -66,7 +72,7 @@ open class JSON : HTTP {
     }
 
     fun PUT(uri: String?, data: RequestBody?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!).put(data!!).build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri!!, headers).put(data!!).build(), JSONCallback(handler, this))
     }
 
     fun PUT(uri: String?, data: JSONObject, handler: JSONResponseHandler) {
@@ -78,7 +84,7 @@ open class JSON : HTTP {
     }
 
     fun PATCH(uri: String?, data: RequestBody?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!).patch(data!!).build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri!!, headers).patch(data!!).build(), JSONCallback(handler, this))
     }
 
     fun PATCH(uri: String?, data: JSONObject, handler: JSONResponseHandler) {
@@ -90,7 +96,7 @@ open class JSON : HTTP {
     }
 
     fun DELETE(uri: String?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!).delete().build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri!!, headers).delete().build(), JSONCallback(handler, this))
     }
 
     private fun jsonBuildErr(e: JSONException) {

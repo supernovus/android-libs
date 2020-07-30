@@ -19,13 +19,13 @@ import java.io.IOException
  * Example usage in your web service class:
  *
  * public void downloadFile(String url, String filepath, Download.FilesResponseHandler handler) {
- * sendRequest(new Request.Builder().url(url).build(),
- * new Download.FileCallback(filepath, this, handler));
+ *   sendRequest(new Request.Builder().url(url).build(),
+ *   new Download.FileCallback(filepath, this, handler));
  * }
  *
  * public void downloadFile(String url, String filepath) {
- * sendRequest(new Request.Builder().url(url).build(),
- * new Download.FileCallback(filepath, this));
+ *   sendRequest(new Request.Builder().url(url).build(),
+ *   new Download.FileCallback(filepath, this));
  * }
  *
  */

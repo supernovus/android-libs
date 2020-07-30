@@ -14,4 +14,8 @@ abstract class AppBase : Application() {
         get() = AppInfo.getVersionName(this)
     val permissions: Array<String>
         get() = AppInfo.getPermissions(this)
+
+    fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        return AppInfo.isServiceRunning(this, serviceClass)
+    }
 }

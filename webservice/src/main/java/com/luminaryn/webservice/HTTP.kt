@@ -6,6 +6,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.internal.http2.Header
 import java.io.File
 
 /**
@@ -60,10 +61,28 @@ abstract class HTTP {
      * @param uri
      * @return
      */
-    fun makeRequest(uri: String): Request.Builder {
+    @JvmOverloads
+    fun makeRequest(uri: String, headers: Headers? = null): Request.Builder {
         val url = baseURL + uri
-        return Request.Builder()
-                .url(url)
+        val builder = Request.Builder().url(url)
+        if (headers != null) {
+            builder.headers(headers);
+        }
+        return builder;
+    }
+
+    /**
+     * A wrapper for makeRequest that automatically builds a Headers.Builders object passed in.
+     */
+    fun makeRequest(uri: String, headers: Headers.Builder): Request.Builder {
+        return makeRequest(uri, headers.build());
+    }
+
+    /**
+     * Get a new headers builder.
+     */
+    fun makeHeaders(): Headers.Builder {
+        return Headers.Builder();
     }
 
     /**
