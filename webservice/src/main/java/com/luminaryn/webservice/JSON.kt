@@ -178,7 +178,7 @@ open class JSON : HTTP {
         return errHash
     }
 
-    class Builder : HTTP.Builder<Builder?>() {
+    class Builder : HTTP.Builder<Builder>() {
         override val `this`: Builder
             get() = this
 

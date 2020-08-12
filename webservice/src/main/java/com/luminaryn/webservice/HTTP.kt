@@ -127,7 +127,7 @@ abstract class HTTP {
     /**
      * An abstract class for a Builder, add a build() method specific to your child class.
      */
-    abstract class Builder<T : Builder<T>?> {
+    abstract class Builder<T : Builder<T>> {
         var baseURL = ""
         var TAG = DEFAULT_TAG
         var logLevel = DEFAULT_LOG_LEVEL

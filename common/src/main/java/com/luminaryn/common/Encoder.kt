@@ -34,7 +34,8 @@ open class Encoder(algorithm: String?) {
      * @param useTildes Replace '=' with '~'
      * @return The URL safe encoded string.
      */
-    fun encodeForUrl(useTildes: Boolean): String {
+    @JvmOverloads
+    fun encodeForUrl(useTildes: Boolean = false): String {
         return Safe64.urlize(encodeDigest(BASE64), useTildes)
     }
 
