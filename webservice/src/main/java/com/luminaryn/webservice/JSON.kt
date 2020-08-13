@@ -33,7 +33,7 @@ open class JSON : HTTP {
 
     abstract class JSONUIResponseHandler : JSONResponseHandler {
         abstract fun setup(data: JSONObject): Runnable
-        val uIHandler: Handler
+        open val uIHandler: Handler
             get() = HTTP.uIHandler
 
         override fun handle(data: JSONObject) {
@@ -41,7 +41,7 @@ open class JSON : HTTP {
         }
     }
 
-    class JSONCallback internal constructor(private val handler: JSONResponseHandler, var ws: JSON) : Callback {
+    open class JSONCallback internal constructor(private val handler: JSONResponseHandler, var ws: JSON) : Callback {
         override fun onFailure(call: Call, e: IOException) {
             handler.handle(ws.errorMsg(arrayOf("internal", "http_failure", e.message)))
         }
