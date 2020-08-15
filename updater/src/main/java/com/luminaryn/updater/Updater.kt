@@ -42,18 +42,18 @@ open class Updater : JSON {
     /**
      * The ACTION name for the BroadcastReceiver intent.
      */
-    protected var ACTION: String? = "$TAG.ACTION_GET_UPDATE"
+    protected var ACTION: String? = null
 
     /**
      * The file provider name for the cache file.
      * This provider must have access to the Cache Dir.
      */
-    protected var PROVIDER: String? = "$TAG.fileprovider"
+    protected var PROVIDER: String? = null
 
     /**
      * The Prefix for Intent extras
      */
-    protected var EXTRAPREFIX = TAG
+    protected var EXTRAPREFIX: String? = null
 
     /**
      * The name for the 'url' Intent extra parameter.
@@ -68,7 +68,7 @@ open class Updater : JSON {
     /**
      * The notification priority.
      */
-    protected var PRIO = Notification.PRIORITY_DEFAULT
+    protected var notificationPrio = Notification.PRIORITY_HIGH
 
     /**
      * The filename to save in the cache dir.
@@ -103,13 +103,13 @@ open class Updater : JSON {
      *
      * In Android API 26 or higher, this is required to show the notification.
      */
-    protected var notificationChannelId: String? = "$TAG.CHANNEL"
+    protected var notificationChannelId: String? = null
 
     /**
      * The channel importance/priority.
      * Only used if we are creating the channel.
      */
-    protected var notificationChannelPrio = NotificationManager.IMPORTANCE_DEFAULT
+    protected var notificationChannelPrio: Int = 0
 
     /**
      * The id of the resource string to get the channel name from.
@@ -159,20 +159,6 @@ open class Updater : JSON {
     protected var packageUrl: String? = null
 
     /**
-     * Build a new Updater and get the current version from the context.
-     * Use of this version is pretty much only useful from sub-classes, as
-     * there's no way to set properties. As such, it's protected access.
-     *
-     * @param context The application context.
-     * @param broadcastClass The BroadcastReceiver class.
-     */
-    protected constructor(context: Context, broadcastClass: Class<*>) : super() {
-        this.context = context
-        this.broadcastClass = broadcastClass
-        versionFromContext
-    }
-
-    /**
      * A constructor used by the Builder.build() method.
      * This is the preferred way to build Updater instances.
      *
@@ -197,11 +183,22 @@ open class Updater : JSON {
         if (builder.ACTION != null) {
             ACTION = builder.ACTION
         }
+        else {
+            ACTION = "$TAG.ACTION_GET_UPDATE"
+        }
         if (builder.PROVIDER != null) {
             PROVIDER = builder.PROVIDER
         }
+        else
+        {
+            PROVIDER = "$TAG.fileprovider"
+        }
         if (builder.EXTRAPREFIX != null) {
-            EXTRAPREFIX = builder.EXTRAPREFIX!!
+            EXTRAPREFIX = builder.EXTRAPREFIX
+        }
+        else
+        {
+            EXTRAPREFIX = TAG
         }
         if (builder.URLEXTRA != null) {
             URLEXTRA = builder.URLEXTRA
@@ -210,7 +207,7 @@ open class Updater : JSON {
             NOTIFICATION_ID = builder.NOTIFICATION_ID
         }
         if (builder.PRIO != Builder.UNSPECIFIED) {
-            PRIO = builder.PRIO
+            notificationPrio = builder.PRIO
         }
         if (builder.filename != null) {
             filename = builder.filename
@@ -227,8 +224,15 @@ open class Updater : JSON {
         if (builder.notificationChannelId != null) {
             notificationChannelId = builder.notificationChannelId
         }
+        else {
+            notificationChannelId = "$TAG.CHANNEL"
+        }
         if (builder.notificationChannelPrio != Builder.UNSPECIFIED) {
             notificationChannelPrio = builder.notificationChannelPrio
+        }
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        {
+            notificationChannelPrio = NotificationManager.IMPORTANCE_HIGH
         }
         if (builder.notificationChannelName != 0) {
             notificationChannelName = builder.notificationChannelName
@@ -254,7 +258,7 @@ open class Updater : JSON {
     }
 
     private val versionFromContext: Unit
-        private get() {
+        get() {
             try {
                 val pinfo = context.packageManager.getPackageInfo(context.packageName, 0)
                 currentVersionName = pinfo.versionName
@@ -308,10 +312,10 @@ open class Updater : JSON {
                     }
                     val name = context.getString(notificationChannelName)
                     if (notificationChannelDesc == 0) {
-                        notifications.createChannel(notificationChannelId, name, notificationChannelPrio)
+                        notifications.createChannel(notificationChannelId!!, name, null, notificationChannelPrio)
                     } else {
                         val desc = context.getString(notificationChannelDesc)
-                        notifications.createChannel(notificationChannelId, name, notificationChannelPrio, desc)
+                        notifications.createChannel(notificationChannelId!!, name, desc, notificationChannelPrio)
                     }
                 }
             }
@@ -323,8 +327,16 @@ open class Updater : JSON {
             val bundle = Bundle()
             bundle.putString(URL(), newestUrl)
             d(TAG, "Extras Bundle: $bundle")
-            val intent = notifications.createBroadcast(ACTION, bundle)
-            val not = notifications.createNotification(notificationChannelId, title, message, PRIO, notificationIcon, intent)
+            val intent = notifications.createBroadcast(ACTION!!, bundle)
+            val not = notifications.createNotification(
+                notificationChannelId,
+                notificationIcon,
+                title,
+                message,
+                null,
+                notificationPrio,
+                intent
+            )
             notifications.show(not, NOTIFICATION_ID)
         }
     }
