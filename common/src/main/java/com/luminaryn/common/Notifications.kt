@@ -61,7 +61,7 @@ open class Notifications(private val context: Context, private val broadcastClas
     }
 
     @TargetApi(26)
-    fun getChannel(id: String?): NotificationChannel {
+    fun getChannel(id: String?): NotificationChannel? {
         return notificationManager.getNotificationChannel(id)
     }
 
