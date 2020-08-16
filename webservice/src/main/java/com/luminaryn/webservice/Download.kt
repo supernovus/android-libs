@@ -30,22 +30,7 @@ import java.io.IOException
  *
  */
 class Download {
-    class FileCallback : Callback {
-        private var targetPath: String
-        var ws: HTTP
-        var handler: FileResponseHandler?
-
-        constructor(targetPath: String, ws: HTTP) {
-            this.targetPath = targetPath
-            this.ws = ws
-            handler = null
-        }
-
-        constructor(targetPath: String, ws: HTTP, handler: FileResponseHandler?) {
-            this.targetPath = targetPath
-            this.ws = ws
-            this.handler = handler
-        }
+    open class FileCallback(private var targetPath: String, var ws: HTTP, var handler: FileResponseHandler? = null) : Callback {
 
         override fun onFailure(call: Call, e: IOException) {
             Log.e(ws.TAG, "Failure downloading file: " + e.message)

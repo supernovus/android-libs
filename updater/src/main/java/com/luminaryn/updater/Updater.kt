@@ -11,16 +11,8 @@ import androidx.core.content.FileProvider
 import com.luminaryn.common.LongLog.d
 import com.luminaryn.common.LongLog.e
 import com.luminaryn.common.Notifications
-import com.luminaryn.webservice.JSON
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.Request
-import okhttp3.Response
-import okio.buffer
-import okio.sink
 import org.json.JSONObject
 import java.io.File
-import java.io.IOException
 
 /**
  * A class for building a web service which can install updates.
@@ -28,8 +20,7 @@ import java.io.IOException
  * There is no public constructor, you need to either make a subclass which
  * initializes all necessary data, or use the Builder class!
  */
-open class Updater : JSON {
-    private var context: Context
+open class Updater : Installer {
     private var broadcastClass: Class<*>
     protected var currentVersionCode = 0
     protected var currentVersionName: String? = null
@@ -43,12 +34,6 @@ open class Updater : JSON {
      * The ACTION name for the BroadcastReceiver intent.
      */
     protected var ACTION: String? = null
-
-    /**
-     * The file provider name for the cache file.
-     * This provider must have access to the Cache Dir.
-     */
-    protected var PROVIDER: String? = null
 
     /**
      * The Prefix for Intent extras
@@ -73,7 +58,7 @@ open class Updater : JSON {
     /**
      * The filename to save in the cache dir.
      */
-    protected var filename: String? = "latest.apk"
+    protected var filename: String = "latest.apk"
 
     /**
      * The id of the resource string to get the title for the notification.
@@ -164,8 +149,7 @@ open class Updater : JSON {
      *
      * @param builder
      */
-    protected constructor(builder: Builder) : super() {
-        context = builder.context
+    protected constructor(builder: Builder) : super(builder.context) {
         broadcastClass = builder.broadcastClass
         if (builder.currentVersionName != null) {
             currentVersionName = builder.currentVersionName
@@ -187,11 +171,11 @@ open class Updater : JSON {
             ACTION = "$TAG.ACTION_GET_UPDATE"
         }
         if (builder.PROVIDER != null) {
-            PROVIDER = builder.PROVIDER
+            provider = builder.PROVIDER
         }
         else
         {
-            PROVIDER = "$TAG.fileprovider"
+            provider = "$TAG.fileprovider"
         }
         if (builder.EXTRAPREFIX != null) {
             EXTRAPREFIX = builder.EXTRAPREFIX
@@ -210,7 +194,7 @@ open class Updater : JSON {
             notificationPrio = builder.PRIO
         }
         if (builder.filename != null) {
-            filename = builder.filename
+            filename = builder.filename!!
         }
         if (builder.notificationTitle != 0) {
             notificationTitle = builder.notificationTitle
@@ -383,30 +367,7 @@ open class Updater : JSON {
             logError("Must specify a url to download")
             return
         }
-        val request = Request.Builder()
-                .url(url)
-                .build()
-        val parent = this
-        sendRequest(request, object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                parent.logError("Error downloading update APK file", e)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    val download = File(context.cacheDir, filename)
-                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
-                    val sink = download.sink().buffer()
-                    sink.writeAll(response.body!!.source())
-                    sink.close()
-                    if (download.exists()) {
-                        parent.installApk(download)
-                    }
-                } catch (e: IOException) {
-                    parent.logError("IOException thrown while downloading update", e)
-                }
-            }
-        })
+        downloadUpdate(url, filename)
     }
 
     /**
@@ -488,21 +449,14 @@ open class Updater : JSON {
         } else false
     }
 
-    // TODO: move to PackageInstaller API.
-    fun installApk(file: File?) {
-        val uri = FileProvider.getUriForFile(context.applicationContext, PROVIDER!!, file!!)
-        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-        intent.data = uri
-        intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
-        context.startActivity(intent)
-    }
-
     /**
      * A Builder for making Updater instances.
      *
      * This is the preferred way to create Updater instances.
      */
-    data class Builder @JvmOverloads constructor(var context: Context, var broadcastClass: Class<*>,
+    data class Builder @JvmOverloads constructor(
+        var context: Context,
+        var broadcastClass: Class<*>,
         var currentVersionCode: Int = 0,
         var currentVersionName: String? = null,
         var TAG: String? = null,
