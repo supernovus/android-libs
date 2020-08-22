@@ -34,34 +34,43 @@ class Download {
 
         override fun onFailure(call: Call, e: IOException) {
             Log.e(ws.TAG, "Failure downloading file: " + e.message)
+            handler?.handleConnectionFailure(call, e)
         }
 
         override fun onResponse(call: Call, response: Response) {
-            if (!response.isSuccessful) return
+            if (!response.isSuccessful) {
+                handler?.handleUnsuccessfulResponse(call, response)
+                return
+            }
             try {
+                handler?.handleSuccessfulResponse(call, response)
                 val download = File(targetPath)
                 val sink = download.sink().buffer()
                 sink.writeAll(response.body!!.source())
                 sink.close()
-                if (handler != null) {
-                    handler!!.handle(download)
-                }
+                handler?.handleDownload(download)
             } catch (e: Exception) {
                 Log.v(ws.TAG, "Exception occurred trying to save downloaded file: " + e.message)
+                handler?.handleException(call, response, e)
             }
         }
     }
 
     interface FileResponseHandler {
-        fun handle(file: File?)
+        fun handleDownload(file: File) {}
+        fun handleSuccessfulResponse(call: Call, response: Response) {}
+        fun handleConnectionFailure(call: Call, e: IOException) {}
+        fun handleUnsuccessfulResponse(call: Call, response: Response) {}
+        fun handleException(call: Call, response: Response, e: Exception) {}
     }
 
     abstract class FileUIResponseHandler : FileResponseHandler {
-        abstract fun setup(file: File?): Runnable
+        abstract fun setup(file: File): Runnable
+
         val uIHandler: Handler
             get() = HTTP.uIHandler
 
-        override fun handle(file: File?) {
+        override fun handleDownload(file: File) {
             uIHandler.post(setup(file))
         }
     }
