@@ -1,6 +1,12 @@
 package com.luminaryn.common
 
 object VerInfo {
+
+    fun String.trim0() : String {
+        val trimmed = this.replace(Regex("^0+"),"")
+        return if (trimmed.isNotEmpty()) trimmed else "0"
+    }
+
     fun verCode (major: Int, minor: Int, patch: Int) : Int {
         return major * 1000000 + minor * 1000 + patch;
     }
@@ -21,19 +27,19 @@ object VerInfo {
         val vl = verCode.length;
 
         val ma: String
-        var mi: String
-        var pa: String
+        val mi: String
+        val pa: String
 
         when {
             vl >= 7 -> { // Major version over 0
                 ma = verCode.substring(0, vl-6)
-                mi = verCode.substring(vl-6, 3).trim('0')
-                pa = verCode.substring(vl-3, 3).trim('0')
+                mi = verCode.substring(vl-6, 3).trim0()
+                pa = verCode.substring(vl-3, 3).trim0()
             }
             vl >= 4 -> { // Major version 0, Minor version over 0
                 ma = "0"
                 mi = verCode.substring(0, vl-3)
-                pa = verCode.substring(vl-3, 3).trim('0')
+                pa = verCode.substring(vl-3, 3).trim0()
             }
             else -> { // Both major and minor 0.
                 ma = "0"
@@ -41,9 +47,6 @@ object VerInfo {
                 pa = verCode;
             }
         }
-
-        if (mi.isEmpty()) mi = "0"
-        if (pa.isEmpty()) pa = "0"
 
         return "${ma}.${mi}.${pa}"
     }
