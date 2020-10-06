@@ -93,13 +93,13 @@ open class Settings(protected val context: Context, preferenceName: String?) {
     @JvmOverloads
     fun getJSONObject(key: String, defValue: JSONObject? = null): JSONObject? {
         val jsonText = getString(key);
-        return if (jsonText.isNullOrEmpty()) null else JSONObject(jsonText);
+        return if (jsonText.isNullOrEmpty()) defValue else JSONObject(jsonText);
     }
 
     @JvmOverloads
     fun getJSONArray(key: String, defValue: JSONArray? = null): JSONArray? {
         val jsonText = getString(key);
-        return if (jsonText.isNullOrEmpty()) null else JSONArray(jsonText);
+        return if (jsonText.isNullOrEmpty()) defValue else JSONArray(jsonText);
     }
 
     fun contains(key: String): Boolean {
