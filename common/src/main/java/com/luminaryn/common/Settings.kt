@@ -40,14 +40,19 @@ open class Settings(protected val context: Context, preferenceName: String?) {
      * If using apply() we return true. If there is no active editor we return false.
      */
     fun save(atomic: Boolean): Boolean {
-        return if (editor != null) {
+        if (editor != null) {
             if (atomic) {
-                editor!!.commit()
+                val ret = editor!!.commit()
+                editor = null
+                return ret
             } else {
                 editor!!.apply()
-                true
+                editor = null
+                return true
             }
-        } else false
+        } else {
+            return false
+        }
     }
 
     /**
@@ -63,7 +68,6 @@ open class Settings(protected val context: Context, preferenceName: String?) {
     fun getBoolean(key: String, defValue: Boolean = false): Boolean {
         return preferences.getBoolean(key, defValue)
     }
-
 
     @JvmOverloads
     fun getFloat(key: String, defValue: Float = 0f): Float {
@@ -106,9 +110,35 @@ open class Settings(protected val context: Context, preferenceName: String?) {
         return preferences.contains(key);
     }
 
-    fun getAll(): Map<String, *> {
-        return preferences.getAll();
+    fun getAll(expandJSON: Boolean): Map<String, *> {
+        val prefMap = preferences.getAll();
+        if (expandJSON) {
+            val expMap = HashMap<String, Any?>()
+            for ((key, value) in prefMap) {
+                if (value is String) {
+                    if (value.startsWith('[') && value.endsWith(']')) {
+                        expMap[key] = JSONArray(value)
+                    }
+                    else if (value.startsWith('{') && value.endsWith('}')) {
+                        expMap[key] = JSONObject(value)
+                    }
+                    else { // Doesn't match a JSON value.
+                        expMap[key] = value
+                    }
+                } else { // Is not a string.
+                    expMap[key] = value
+                }
+            } // for prefMap
+            return expMap
+        } else {
+            return prefMap
+        }
     }
+
+    val keys: Set<String>
+        get () {
+            return getAll(false).keys
+        }
 
     fun putBoolean(key: String, value: Boolean): Settings {
         getEditor()?.putBoolean(key, value);
