@@ -342,14 +342,14 @@ open class Updater : Installer {
      */
     fun checkForUpdates() {
         val NO_VER = "0.0.0"
-        GET(updatesUrl, object : JSONResponseHandler {
+        GET(updatesUrl!!, object : JSONResponseHandler {
             override fun handle(data: JSONObject) {
                 val newestVerName = data.optString(updatesNameKey, NO_VER)
                 var newestVerCode = data.optInt(updatesCodeKey)
                 if (newestVerCode == 0 && newestVerName != NO_VER) {
                     newestVerCode = getCodeFromName(newestVerName)
                 }
-                val newestUrl = data.optString(updatesUrlKey, packageUrl)
+                val newestUrl = data.optString(updatesUrlKey, packageUrl!!)
                 if (newestVerCode != 0 && newestVerName != NO_VER && !newestUrl.isEmpty()) {
                     checkForUpdates(newestVerCode, newestVerName, newestUrl)
                 }

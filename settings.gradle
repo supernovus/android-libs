@@ -1,3 +1,4 @@
+include ':interop'
 include ':updater'
 include ':webservice'
 include ':common'

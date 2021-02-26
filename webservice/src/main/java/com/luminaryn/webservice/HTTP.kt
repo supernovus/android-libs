@@ -6,7 +6,6 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.internal.http2.Header
 import java.io.File
 
 /**
@@ -16,15 +15,19 @@ import java.io.File
  */
 abstract class HTTP {
     /**
-     * Get the OkHttpClient instance.
-     *
-     * @return
+     * The OkHttpClient instance.
      */
     val client: OkHttpClient
     protected val baseURL: String
     open val TAG: String
     @JvmField
     protected val logLevel: Int
+
+    /**
+     * OkHttp Headers to pass to a makeRequest wrapper.
+     * It's left up to your subclass how to handle this.
+     */
+    var headers: Headers? = null;
 
     /**
      * Create an HTTP client with defaults.
@@ -52,6 +55,15 @@ abstract class HTTP {
         } else {
             client = httpBuilder.okClientBuilder!!.build()
         }
+    }
+
+    /**
+     * Set the headers using a Headers.Builder object.
+     *
+     * @param headers
+     */
+    fun setHeaders(headers: Headers.Builder) {
+        this.headers = headers.build()
     }
 
     /**
@@ -120,8 +132,8 @@ abstract class HTTP {
      * @param request
      * @param callback
      */
-    fun sendRequest(request: Request?, callback: Callback?) {
-        client.newCall(request!!).enqueue(callback!!)
+    fun sendRequest(request: Request, callback: Callback) {
+        client.newCall(request).enqueue(callback)
     }
 
     /**
@@ -133,6 +145,7 @@ abstract class HTTP {
         var logLevel = DEFAULT_LOG_LEVEL
         var okClientBuilder: OkHttpClient.Builder? = null
         protected abstract val `this`: T
+
         fun setBaseUrl(url: String): T {
             baseURL = url
             return `this`

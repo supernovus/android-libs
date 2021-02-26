@@ -18,14 +18,8 @@ import java.util.*
  */
 open class JSON : HTTP {
     constructor() : super() {}
-    constructor(url: String?) : super(url!!) {}
-    protected constructor(builder: Builder?) : super(builder!!) {}
-
-    var headers: Headers? = null;
-
-    fun setHeaders(headers: Headers.Builder) {
-        this.headers = headers.build()
-    }
+    constructor(url: String) : super(url) {}
+    protected constructor(builder: Builder) : super(builder) {}
 
     interface JSONResponseHandler {
         fun handle(data: JSONObject)
@@ -55,48 +49,48 @@ open class JSON : HTTP {
         return data.toString().toRequestBody(TYPE_JSON)
     }
 
-    fun GET(uri: String?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!, headers).get().build(), JSONCallback(handler, this))
+    fun GET(uri: String, handler: JSONResponseHandler) {
+        sendRequest(makeRequest(uri, headers).get().build(), JSONCallback(handler, this))
     }
 
-    fun POST(uri: String?, data: RequestBody?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!, headers).post(data!!).build(), JSONCallback(handler, this))
+    fun POST(uri: String, data: RequestBody, handler: JSONResponseHandler) {
+        sendRequest(makeRequest(uri, headers).post(data).build(), JSONCallback(handler, this))
     }
 
-    fun POST(uri: String?, data: JSONObject, handler: JSONResponseHandler) {
+    fun POST(uri: String, data: JSONObject, handler: JSONResponseHandler) {
         POST(uri, jsonBody(data), handler)
     }
 
-    fun POST(uri: String?, data: Map<String?, Any?>?, handler: JSONResponseHandler) {
+    fun POST(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
         POST(uri, JSONObject(data), handler)
     }
 
-    fun PUT(uri: String?, data: RequestBody?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!, headers).put(data!!).build(), JSONCallback(handler, this))
+    fun PUT(uri: String, data: RequestBody, handler: JSONResponseHandler) {
+        sendRequest(makeRequest(uri, headers).put(data).build(), JSONCallback(handler, this))
     }
 
-    fun PUT(uri: String?, data: JSONObject, handler: JSONResponseHandler) {
+    fun PUT(uri: String, data: JSONObject, handler: JSONResponseHandler) {
         PUT(uri, jsonBody(data), handler)
     }
 
-    fun PUT(uri: String?, data: Map<String?, Any?>?, handler: JSONResponseHandler) {
+    fun PUT(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
         PUT(uri, JSONObject(data), handler)
     }
 
-    fun PATCH(uri: String?, data: RequestBody?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!, headers).patch(data!!).build(), JSONCallback(handler, this))
+    fun PATCH(uri: String, data: RequestBody, handler: JSONResponseHandler) {
+        sendRequest(makeRequest(uri, headers).patch(data).build(), JSONCallback(handler, this))
     }
 
-    fun PATCH(uri: String?, data: JSONObject, handler: JSONResponseHandler) {
+    fun PATCH(uri: String, data: JSONObject, handler: JSONResponseHandler) {
         PATCH(uri, jsonBody(data), handler)
     }
 
-    fun PATCH(uri: String?, data: Map<String?, Any?>?, handler: JSONResponseHandler) {
+    fun PATCH(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
         PATCH(uri, JSONObject(data), handler)
     }
 
-    fun DELETE(uri: String?, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri!!, headers).delete().build(), JSONCallback(handler, this))
+    fun DELETE(uri: String, handler: JSONResponseHandler) {
+        sendRequest(makeRequest(uri, headers).delete().build(), JSONCallback(handler, this))
     }
 
     private fun jsonBuildErr(e: JSONException) {
