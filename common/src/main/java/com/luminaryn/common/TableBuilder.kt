@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.View
 import android.widget.TableLayout
 import android.widget.TableRow
+import android.widget.TextView
 
 /**
  * A minimalist table builder where all children should have the same layout parameters.
@@ -58,6 +59,22 @@ class TableBuilder(
             childView.layoutParams = childLayout
             element.addView(childView)
             return childView
+        }
+
+        /**
+         * Add a TextView child to this row, and set it's text.
+         *
+         * @param text The text to display in the TextView.
+         * @param newLayoutParams If true, use new layout params instead of the default.
+         * @return The TextView
+         */
+        @JvmOverloads
+        fun addText (text: CharSequence? = null, newLayoutParams: Boolean = false) : TextView {
+            val view = TextView(context)
+            if (text != null)
+                view.text = text
+            add(view, newLayoutParams)
+            return view
         }
     }
 

@@ -14,7 +14,7 @@ import java.lang.Exception
  * @param preferenceName The name of the shared preference store to get from the context.
  */
 open class Settings(protected val context: Context, preferenceName: String?) {
-    val preferences: SharedPreferences
+    val preferences: SharedPreferences = context.getSharedPreferences(preferenceName, 0)
     protected var editor: SharedPreferences.Editor? = null
 
     @SuppressLint("CommitPrefEdits")
@@ -40,18 +40,18 @@ open class Settings(protected val context: Context, preferenceName: String?) {
      * If using apply() we return true. If there is no active editor we return false.
      */
     fun save(atomic: Boolean): Boolean {
-        if (editor != null) {
+        return if (editor != null) {
             if (atomic) {
                 val ret = editor!!.commit()
                 editor = null
-                return ret
+                ret
             } else {
                 editor!!.apply()
                 editor = null
-                return true
+                true
             }
         } else {
-            return false
+            false
         }
     }
 
@@ -288,7 +288,4 @@ open class Settings(protected val context: Context, preferenceName: String?) {
         return this
     }
 
-    init {
-        preferences = context.getSharedPreferences(preferenceName, 0)
-    }
 }

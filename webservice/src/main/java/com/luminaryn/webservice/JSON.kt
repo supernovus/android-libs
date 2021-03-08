@@ -45,12 +45,31 @@ open class JSON : HTTP {
         }
     }
 
+    fun fromClosure (callback: (JSONObject) -> Unit): JSONResponseHandler {
+        return object : JSONResponseHandler {
+            override fun handle(data: JSONObject) {
+               callback(data)
+            }
+        }
+    }
+
+    fun detectData (data: Any): RequestBody {
+        if (data is RequestBody) return data
+        if (data is JSONObject) return jsonBody(data)
+        if (data is Map<*,*>) return jsonBody(JSONObject(data))
+        else throw Error("Invalid data type, could not convert to JSONObject")
+    }
+
     fun jsonBody(data: JSONObject): RequestBody {
         return data.toString().toRequestBody(TYPE_JSON)
     }
 
     fun GET(uri: String, handler: JSONResponseHandler) {
         sendRequest(makeRequest(uri, headers).get().build(), JSONCallback(handler, this))
+    }
+
+    fun GET(uri: String, closure: (JSONObject) -> Unit) {
+        GET(uri, fromClosure(closure))
     }
 
     fun POST(uri: String, data: RequestBody, handler: JSONResponseHandler) {
@@ -65,6 +84,10 @@ open class JSON : HTTP {
         POST(uri, JSONObject(data), handler)
     }
 
+    fun POST(uri: String, data: Any, closure: (JSONObject) -> Unit) {
+        POST(uri, detectData(data), fromClosure(closure))
+    }
+
     fun PUT(uri: String, data: RequestBody, handler: JSONResponseHandler) {
         sendRequest(makeRequest(uri, headers).put(data).build(), JSONCallback(handler, this))
     }
@@ -75,6 +98,10 @@ open class JSON : HTTP {
 
     fun PUT(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
         PUT(uri, JSONObject(data), handler)
+    }
+
+    fun PUT(uri: String, data: Any, closure: (JSONObject) -> Unit) {
+        PUT(uri, detectData(data), fromClosure(closure))
     }
 
     fun PATCH(uri: String, data: RequestBody, handler: JSONResponseHandler) {
@@ -89,8 +116,16 @@ open class JSON : HTTP {
         PATCH(uri, JSONObject(data), handler)
     }
 
+    fun PATCH(uri: String, data: Any, closure: (JSONObject) -> Unit) {
+        PATCH(uri, detectData(data), fromClosure(closure))
+    }
+
     fun DELETE(uri: String, handler: JSONResponseHandler) {
         sendRequest(makeRequest(uri, headers).delete().build(), JSONCallback(handler, this))
+    }
+
+    fun DELETE(uri: String, closure: (JSONObject) -> Unit) {
+        DELETE(uri, fromClosure(closure))
     }
 
     private fun jsonBuildErr(e: JSONException) {

@@ -6,6 +6,15 @@ import org.json.JSONObject
 class MongoPatch {
     val data = JSONObject()
 
+    val size: Int
+        get() = data.length()
+
+    val isValid: Boolean
+        get() = data.length() > 0
+
+    val isEmpty: Boolean
+        get() = data.length() == 0
+
     fun reset () {
         data.remove("\$set")
         data.remove("\$unset")
@@ -17,10 +26,13 @@ class MongoPatch {
         data.remove("\$addToSet")
     }
 
-    private fun patchValue (key: String, property: String, value: Any) {
+    private fun patchValue (key: String, property: String, kvalue: Any) {
         val existing = data.has(key)
         val pdata = if (existing) data.getJSONObject(key) else JSONObject()
-        pdata.put(property, value)
+        val jvalue = if (kvalue is Collection<*>) JSONArray(kvalue)
+            else if (kvalue is Map<*,*>) JSONObject(kvalue)
+            else kvalue
+        pdata.put(property, jvalue)
         if (!existing)
             data.put(key, pdata)
     }
