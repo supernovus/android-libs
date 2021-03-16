@@ -14,6 +14,7 @@ import java.lang.Exception
  * @param preferenceName The name of the shared preference store to get from the context.
  */
 open class Settings(protected val context: Context, preferenceName: String?) {
+
     val preferences: SharedPreferences = context.getSharedPreferences(preferenceName, 0)
     protected var editor: SharedPreferences.Editor? = null
 
@@ -106,6 +107,24 @@ open class Settings(protected val context: Context, preferenceName: String?) {
         return if (jsonText.isNullOrEmpty()) defValue else JSONArray(jsonText);
     }
 
+    @JvmOverloads
+    fun getHashMap(key: String, defValue: HashMap<*,*>? = null): HashMap<*,*>? {
+        val jsonText = getString(key);
+        return if (jsonText.isNullOrEmpty())
+            defValue
+        else
+            Json.toHashMap(JSONObject(jsonText), true);
+    }
+
+    @JvmOverloads
+    fun getArrayList(key: String, defValue: ArrayList<*>? = null): ArrayList<*>? {
+        val jsonText = getString(key);
+        return if (jsonText.isNullOrEmpty())
+            defValue
+        else
+            Json.toArrayList(JSONArray(jsonText), true);
+    }
+
     fun contains(key: String): Boolean {
         return preferences.contains(key);
     }
@@ -136,9 +155,7 @@ open class Settings(protected val context: Context, preferenceName: String?) {
     }
 
     val keys: Set<String>
-        get () {
-            return getAll(false).keys
-        }
+        get () = getAll(false).keys
 
     fun putBoolean(key: String, value: Boolean): Settings {
         getEditor()?.putBoolean(key, value);

@@ -314,14 +314,14 @@ open class Updater : Installer {
             val intent = notifications.createBroadcast(ACTION!!, bundle)
             val not = notifications.createNotification(
                 notificationChannelId,
-                notificationIcon,
                 title,
                 message,
                 null,
+                notificationIcon,
                 notificationPrio,
                 intent
             )
-            notifications.show(not, NOTIFICATION_ID)
+            notifications.show(NOTIFICATION_ID, not)
         }
     }
 

@@ -9,11 +9,15 @@ import android.widget.TextView
 /**
  * A minimalist table builder where all children should have the same layout parameters.
  *
+ * @param context The context to pass to created View objects.
+ * @param table A TableLayout instance to add the rows to (optional).
+ * @param rowLayout The layout to be applied to all rows (auto-generated).
+ * @param childLayout The layout to be applied to all row children (auto-generated).
+ *
  * @property context The context to pass to created View objects.
- * @property table A TableLayout instance to add the rows to (optional).
- * @property rowLayout The layout to be applied to all rows (auto-generated).
- * @property childLayout The layout to be applied to all row children (auto-generated).
- * @constructor Build a new TableBuilder object.
+ * @property table The TableLayout instance to add the rows to.
+ * @property rowLayout The default layout to be applied to rows.
+ * @property childLayout default The layout to be applied to all row children.
  */
 class TableBuilder(
     val context: Context,
@@ -85,15 +89,52 @@ class TableBuilder(
      *
      * @param newRowLayout If true, use new layout params for the row instead of the default.
      * @param newChildLayout If true, use new layout params for the children instead of the default.
+     * @param index The index at which to insert the row (or -1 for the end of the table.)
      * @return The newly created Row object will be returned.
      */
     @JvmOverloads
-    fun row(newRowLayout: Boolean = false, newChildLayout: Boolean = false) : Row {
+    fun row(newRowLayout: Boolean = false, newChildLayout: Boolean = false, index: Int = -1) : Row {
         val rowLayout = if (newRowLayout) TableLayout.LayoutParams() else  this.rowLayout
         val childLayout = if (newChildLayout) TableRow.LayoutParams() else this.childLayout
         val row = Row(context, rowLayout, childLayout)
-        table?.addView(row.element)
+        table?.addView(row.element, index)
         return row
+    }
+
+    /**
+     * Create a new Row object, and insert it before or after the specified existing View object.
+     *
+     * If the [table] property is not set, this simply returns the new Row like row() does.
+     * If the specified View is not found in the [table] children, the new Row will be added
+     * at the end of the table.
+     *
+     * @param existingChild  The View instance we want to create a row after in the [table].
+     * @param insertAfter Insert after the existing element instead of before.
+     * @param newRowLayout If true, use new layout params for the row instead of the default.
+     * @param newChildLayout If true, use new layout params for the children instead of the default.
+     * @return The newly created Row object.
+     */
+    fun rowAt(existingChild: View, insertAfter: Boolean = false, newRowLayout: Boolean = false, newChildLayout: Boolean = false) : Row {
+        val existingIndex = table?.indexOfChild(existingChild) ?: -1
+        val insertIndex = if (insertAfter && existingIndex != -1) existingIndex + 1 else existingIndex
+        return row(newRowLayout, newChildLayout, insertIndex)
+    }
+
+    /**
+     * Create a new Row object, and insert it before or after the specified existing Row object.
+     *
+     * If the [table] property is not set, this simply returns the new Row like row() does.
+     * If the specified View is not found in the [table] children, the new Row will be added
+     * at the end of the table.
+     *
+     * @param existingRow  The Row instance we want to create a row after in the [table].
+     * @param insertAfter Insert after the existing element instead of before.
+     * @param newRowLayout If true, use new layout params for the row instead of the default.
+     * @param newChildLayout If true, use new layout params for the children instead of the default.
+     * @return The newly created Row object.
+     */
+    fun rowAt(existingRow: Row, insertAfter: Boolean = false, newRowLayout: Boolean = false, newChildLayout: Boolean = false) : Row {
+        return rowAt(existingRow.element, insertAfter, newRowLayout, newChildLayout)
     }
 
 }

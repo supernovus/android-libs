@@ -54,7 +54,7 @@ class Cache (val settings: Settings, val useKey: String?, val dataKey: String?) 
         }
     }
 
-    fun getOpt (key: String, default: Any): Any {
+    fun getOpt (key: String, default: Any?): Any? {
         return Json.getOpt(data, key, default)
     }
 

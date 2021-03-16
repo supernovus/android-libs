@@ -1,5 +1,6 @@
 package com.luminaryn.common
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,15 +11,27 @@ import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import java.lang.Error
 
 /**
  * A helper library for the Android Notifications system.
  *
- * @property context The context from which this was created, application context is preferred.
+ * Offers both lower-level wrappers around  the various Notification related libraries,
+ * and a higher-level API for managing channels and notifications more transparently.
+ *
+ * @param context The context to use for notifications, application context is preferred.
+ * @param broadcastClass The BroadcastReceiver class which will be used to receive broadcasts.
+ *
+ * @property context The context from which this was created.
  * @property broadcastClass The class which will be used to receive broadcasts.
- * @constructor Create a new Notifications manager with a set context and broadcast class.
  */
 open class Notifications(private val context: Context, private val broadcastClass: Class<*>) {
+
+    open var TAG = DEFAULT_TAG
+
+    protected val channels: HashMap<String, Channel> = HashMap()
+
     val notificationManager: NotificationManager
         get() = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -48,7 +61,7 @@ open class Notifications(private val context: Context, private val broadcastClas
     fun buildChannel(
         id: String,
         name: String?,
-        desc: String?,
+        desc: String? = null,
         prio: Int = NotificationManager.IMPORTANCE_DEFAULT
     ): NotificationChannel {
         val channel = NotificationChannel(id, name, prio)
@@ -56,17 +69,6 @@ open class Notifications(private val context: Context, private val broadcastClas
             channel.description = desc
         }
         return channel
-    }
-
-    @JvmOverloads
-    @TargetApi(26)
-    @Deprecated("Old API", ReplaceWith("buildChannel(id, name, null, prio)"))
-    fun buildChannel(
-        id: String,
-        name: String?,
-        prio: Int = NotificationManager.IMPORTANCE_DEFAULT
-    ) : NotificationChannel {
-        return buildChannel(id, name, null, prio)
     }
 
     /**
@@ -100,12 +102,6 @@ open class Notifications(private val context: Context, private val broadcastClas
         val channel = buildChannel(id, name, desc, prio)
         registerChannel(channel)
         return channel
-    }
-
-    @TargetApi(26)
-    @Deprecated("Old API", ReplaceWith("createChannel(id, name, desc, prio)"))
-    fun createChannel(id: String, name: String?, prio: Int, desc: String?): NotificationChannel {
-        return createChannel(id, name, desc, prio)
     }
 
     /**
@@ -168,26 +164,26 @@ open class Notifications(private val context: Context, private val broadcastClas
         return createBroadcast(createIntent(action, extras), requestCode, flags)
     }
 
-    @Deprecated("Old API", ReplaceWith("createBroadcast(action, null, requestCode, flags)"))
-    fun createBroadcast(action: String, requestCode: Int = 0, flags: Int = PendingIntent.FLAG_UPDATE_CURRENT): PendingIntent {
-        return createBroadcast(action, null, requestCode, flags)
-    }
-
     /**
      * Create an extremely basic Notification.
      *
      * @param [channelId] The channel (ignored if Android version is older than 8.0).
-     * @param [icon] The resource id of the icon for this notification.
+     * @param [icon] The resource id or Icon object of the small icon for this notification.
      * @param [prio] The priority (optional, ignored if Android version is 8.0 or higher).
      */
     @JvmOverloads
     fun createNotification(
-        channelId: String?,
-        icon: Int,
-        prio: Int = Notification.PRIORITY_DEFAULT
+            channelId: String?,
+            icon: Any? = null,
+            prio: Int = Notification.PRIORITY_DEFAULT
     ) : Notification.Builder {
         val builder = Notification.Builder(context)
-            .setSmallIcon(icon)
+
+        if (icon is Int)
+            builder.setSmallIcon(icon)
+        else if (icon is Icon)
+            builder.setSmallIcon(icon)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder.setChannelId(channelId)
         }
@@ -207,25 +203,26 @@ open class Notifications(private val context: Context, private val broadcastClas
      * when the notification is expanded.)
      *
      * @param [channelId] The channel (ignored if Android version is older than 8.0).
-     * @param [icon] The resource id of the icon for this notification.
      * @param [title] The title for this notification.
      * @param [bodySummary] A short summary for this notification (optional).
      * @param [bodyMessage] A longer message for this notification (optional).
+     * @param [icon] The resource id or Icon object for this notification.
      * @param [prio] The priority (optional, ignored if Android version is 8.0 or higher).
      * @param [contentAction] A PendingIntent to be used if the notification itself is clicked.
      */
     @JvmOverloads
     fun createNotification(
         channelId: String?,
-        icon: Int,
         title: String?,
         bodySummary: String? = null,
         bodyMessage: String? = null,
+        icon: Any? = null,
         prio: Int = Notification.PRIORITY_DEFAULT,
         contentAction: PendingIntent? = null,
     ): Notification.Builder {
-        val builder = createNotification(channelId, icon, prio)
-            .setContentTitle(title)
+
+        val builder = createNotification(channelId, icon, prio).setContentTitle(title)
+
         if (!bodySummary.isNullOrEmpty()) {
             builder.setContentText(bodySummary);
         }
@@ -238,27 +235,8 @@ open class Notifications(private val context: Context, private val broadcastClas
         if (contentAction != null) {
             builder.setContentIntent(contentAction)
         }
+
         return builder
-    }
-
-    @Deprecated("Old API", ReplaceWith("createNotification(channelId, icon, title, bodyText, null, prio)"))
-    fun createNotification(channelId: String?, title: String?, bodyText: String?, prio: Int, icon: Int): Notification.Builder {
-        return createNotification(channelId, icon, title, bodyText, null, prio)
-    }
-
-    @Deprecated("Old API", ReplaceWith("createNotification(channelId, icon, title, bodyText)"))
-    fun createNotification(channelId: String?, title: String?, bodyText: String?, icon: Int): Notification.Builder {
-        return createNotification(channelId, icon, title, bodyText)
-    }
-
-    @Deprecated("Old API", ReplaceWith("createNotification(channelId, icon, title, bodyText, null, prio, contentAction)"))
-    fun createNotification(channelId: String?, title: String?, bodyText: String?, prio: Int, icon: Int, contentAction: PendingIntent?): Notification.Builder {
-        return createNotification(channelId, icon, title, bodyText, null, prio, contentAction)
-    }
-
-    @Deprecated("Old API", ReplaceWith("createNotification(channelId, icon, title, bodyText, contentAction = contentAction)"))
-    fun createNotification(channelId: String?, title: String?, bodyText: String?, icon: Int, contentAction: PendingIntent?): Notification.Builder {
-        return createNotification(channelId, icon, title, bodyText, contentAction = contentAction)
     }
 
     /**
@@ -311,9 +289,8 @@ open class Notifications(private val context: Context, private val broadcastClas
      * @param [builder] A Notification.Builder object from createNotification()
      * @param [id] The notification id, should be unique for different notifications.
      */
-    @JvmOverloads
-    fun show(builder: Notification.Builder, id: Int = 0) {
-        show(builder.build(), id)
+    fun show(id: Int, builder: Notification.Builder) {
+        show(id, builder.build())
     }
 
     /**
@@ -322,8 +299,231 @@ open class Notifications(private val context: Context, private val broadcastClas
      * @param [notification] A fully built Notification object.
      * @param [id] The notification id, should be unique for different notifications.
      */
-    @JvmOverloads
-    fun show(notification: Notification?, id: Int = 0) {
+    fun show(id: Int, notification: Notification?) {
         notificationManager.notify(id, notification)
+    }
+
+    /**
+     * Add a new channel specifying the values directly.
+     *
+     * @param id The unique identifier for this channel, will be registered in Android.
+     * @param name The name of the channel
+     * @param desc Optional description of the channel.
+     * @param importance
+     * @param priority
+     * @param icon
+     */
+
+    /**
+     * Add a new channel using an array definition.
+     *
+     * @param id  The unique identifier for this channel, will be registered in Android.
+     * @param channelDef The definition for the channel. Must be an array with five fields:
+     *
+     *  importance: An Int value, or one of "min", "low", "default", "high", "max"
+     *  priority: An Int value, or one of "min", "low", "default", "high", "max"
+     *  name: A String, the name of the channel.
+     *  desc: An optional String, a description of the channel.
+     *  icon: An optional int of a drawable resource, or an Icon. Set to null for none.
+     *
+     * @return The Channel object that was created.
+     */
+    fun addChannel (id: String, channelDef: Array<*>): Channel {
+        if (channels.containsKey(id)) throw Error("Cannot overwrite existing channel '$id'")
+
+        val channel = Channel.fromArray(id, channelDef, this)
+        channels[id] = channel
+
+        return channel
+    }
+
+    /**
+     * Add a whole bunch of channels using a HashMap where the keys
+     * are the name of the channel, and the values are Arrays in the format wanted by
+     * the addChannels(id, channelDef) method.
+     */
+    fun addChannels (channels: HashMap<String, Array<*>>) {
+        for ((id, channel) in channels) {
+            addChannel(id, channel)
+        }
+    }
+
+    /**
+     * Get a channel if it exists.
+     */
+    fun getChannel (id: String): Channel? {
+        return channels[id]
+    }
+
+    /**
+     * If the specified channel exists, make an empty super simple notification in it.
+     */
+    fun makeNotification (id: String): Notification.Builder? {
+        return channels[id]?.makeNotification()
+    }
+
+    @JvmOverloads
+    fun makeNotification (id: String, title: String, bodyShort: String?, bodyLong: String? = null, useIcon: Any? = null): Notification.Builder? {
+        return channels[id]?.makeNotification(title, bodyShort, bodyLong, useIcon)
+    }
+
+    protected fun getText (id: Int): String {
+        return context.getString(id)
+    }
+
+    open class Channel constructor(
+            protected val parent: Notifications,
+            val id: String,
+            val name: String,
+            val desc: String?,
+            val importance: Int ,
+            val priority: Int,
+            val icon: Any?,
+    ) {
+
+        constructor(parent:Notifications, id: String, name: String, desc: String, importance: String, priority: String, icon: Any?) : this(parent, id, name, desc, getImp(importance), getPrio(priority), icon)
+
+        val notificationChannel: NotificationChannel?
+
+        init {
+            notificationChannel = if (OVER_O)
+                 parent.createChannel(id, name, desc, importance)
+            else
+                null
+        }
+
+        fun makeNotification (): Notification.Builder {
+            val icon = if (this.icon is Int || this.icon is Icon) this.icon else ICONS[DEFAULT_ICON]
+            return parent.createNotification(id, icon, priority)
+        }
+
+        @JvmOverloads
+        fun makeNotification (title: String, bodyShort: String?, bodyLong: String? = null, useIcon: Any? = null): Notification.Builder {
+            val icon = if (useIcon is Int || useIcon is Icon)
+                useIcon
+            else if (this.icon is Int || this.icon is Icon)
+                this.icon
+            else
+                ICONS[DEFAULT_ICON]
+
+            return parent.createNotification(id, title, bodyShort, bodyLong, icon, priority)
+        }
+
+        companion object {
+
+            const val F_IMP  = 0
+            const val F_PRIO = 1
+            const val F_NAME = 2
+            const val F_DESC = 3
+            const val F_ICON = 4
+
+            const val A_SIZE = 5
+
+            protected fun getPrio (prio: String): Int {
+                return if (PRIORITY_NAMES.containsKey(prio))
+                    PRIORITY_NAMES[prio]!!
+                else
+                    PRIORITY_NAMES[DEFAULT_PRIORITY]!!
+            }
+
+            protected fun getImp (imp: String): Int {
+                return if (IMPORTANCE_NAMES.containsKey(imp))
+                    IMPORTANCE_NAMES[imp]!!
+                else
+                    IMPORTANCE_NAMES[DEFAULT_IMPORTANCE]!!
+            }
+
+            fun fromArray (id:String, def: Array<*>, parent: Notifications): Channel {
+                if (def.size != A_SIZE) throw Error("Invalid array passed to fromArray(id, def, parent); did not have $A_SIZE fields.")
+                val nameField = def[F_NAME]
+                val name = if (nameField is String)
+                    nameField
+                else if (nameField is Int)
+                    parent.getText(nameField)
+                else
+                    throw Error("Invalid name field value")
+
+                val descField = def[F_DESC]
+                val desc = if (descField is String)
+                    descField
+                else if (descField is Int)
+                    parent.getText(descField)
+                else
+                    null
+
+                val prioField = def[F_PRIO]
+                val prio = if (prioField is Int)
+                    prioField
+                else if (prioField is String && PRIORITY_NAMES.containsKey(prioField))
+                    PRIORITY_NAMES[prioField]!!
+                else
+                    PRIORITY_NAMES[DEFAULT_PRIORITY]!!
+
+                val impField = def[F_IMP]
+                val imp = if (impField is Int)
+                    impField
+                else if (impField is String && IMPORTANCE_NAMES.containsKey(impField))
+                    IMPORTANCE_NAMES[impField]!!
+                else
+                    IMPORTANCE_NAMES[DEFAULT_IMPORTANCE]!!
+
+                val icon = def[F_ICON]
+
+                return Channel(parent, id, name, desc, imp, prio, icon)
+            }
+
+        }
+    }
+
+    companion object {
+
+        val OVER_O = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+
+        const val MIN = "min"
+        const val LOW = "low"
+        const val DEFAULT = "default"
+        const val HIGH = "high"
+        const val MAX = "max"
+
+        @SuppressLint("InlinedApi")
+        val IMPORTANCE_NAMES = hashMapOf<String,Int>(
+                MIN to if (OVER_O) NotificationManager.IMPORTANCE_MIN else 0,
+                LOW to if (OVER_O) NotificationManager.IMPORTANCE_LOW else 0,
+                DEFAULT to if (OVER_O) NotificationManager.IMPORTANCE_DEFAULT else 0,
+                HIGH to if (OVER_O) NotificationManager.IMPORTANCE_HIGH else 0,
+                MAX to if (OVER_O) NotificationManager.IMPORTANCE_MAX else 0,
+        )
+        const val DEFAULT_IMPORTANCE = DEFAULT
+
+        val PRIORITY_NAMES = hashMapOf(
+                MIN to Notification.PRIORITY_MIN,
+                LOW to Notification.PRIORITY_LOW,
+                DEFAULT to Notification.PRIORITY_DEFAULT,
+                HIGH to Notification.PRIORITY_HIGH,
+                MAX to Notification.PRIORITY_MAX
+        )
+        const val DEFAULT_PRIORITY = DEFAULT
+
+        val ICONS = hashMapOf(
+                "alert" to android.R.drawable.ic_dialog_alert,
+                "info" to android.R.drawable.ic_dialog_info,
+                "details" to android.R.drawable.ic_menu_info_details,
+                "help" to android.R.drawable.ic_menu_help,
+                "calendar" to android.R.drawable.ic_menu_my_calendar,
+                "message" to android.R.drawable.ic_dialog_email,
+                "lock" to android.R.drawable.ic_lock_idle_lock,
+                "camera" to android.R.drawable.ic_menu_camera,
+                "compass" to android.R.drawable.ic_menu_compass,
+                "manage" to android.R.drawable.ic_menu_manage,
+                "map" to android.R.drawable.ic_menu_mapmode,
+                "sync" to android.R.drawable.ic_popup_sync,
+                "add" to android.R.drawable.ic_menu_add,
+                "agenda" to android.R.drawable.ic_menu_agenda,
+                "star" to android.R.drawable.btn_star,
+                "check" to android.R.drawable.checkbox_on_background,
+        )
+        const val DEFAULT_ICON = "alert"
+
+        const val DEFAULT_TAG = "Notifications"
     }
 }
