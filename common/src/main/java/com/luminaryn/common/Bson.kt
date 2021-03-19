@@ -12,84 +12,18 @@ object Bson {
     const val FORMAT_CANONICAL = 1
     const val FORMAT_V1 = 2
 
-    const val BINARY = "\$binary"
-    const val BINARY_PAYLOAD = "base64"
-    const val BINARY_SUBTYPE = "subType"
-    const val BINARY_V1_TYPE = "\$type"
-
-    const val OBJECTID = "\$oid"
-    const val DATE = "\$date"
     const val NUMBER_LONG = "\$numberLong"
 
+    @ExperimentalUnsignedTypes
     fun parseJSON (json: JSONObject) : BsonExtension? {
-        if (json.has(OBJECTID)) {
-            val idString = json.optString(OBJECTID)
-            if (idString.isNotEmpty()) {
-                return ObjectID(idString)
-            }
-        }
-
-        if (json.has(BINARY)) {
-            if (json.has(BINARY_V1_TYPE)) {
-                val payloadStr = json.optString(BINARY)
-                val typeStr = json.optString(BINARY_V1_TYPE)
-                return parseBinaryJson(payloadStr, typeStr, FORMAT_V1)
-            } else {
-                val binData = json.optJSONObject(BINARY)
-                if (binData != null && binData.has(BINARY_PAYLOAD) && binData.has(BINARY_SUBTYPE)) {
-                    val payloadStr = binData.optString(BINARY_PAYLOAD)
-                    val typeStr = binData.optString(BINARY_SUBTYPE)
-                    return parseBinaryJson(payloadStr, typeStr, FORMAT_RELAXED)
-                }
-            }
-        }
-
-        if (json.has(DATE)) {
-            val dateObj = json.optJSONObject(DATE)
-            if (dateObj != null) { // It was a Date object.
-                if (dateObj.has(NUMBER_LONG)) {
-                    val dateNum = dateObj.optLong(NUMBER_LONG)
-                    return dateFromLong(dateNum, FORMAT_CANONICAL)
-                }
-            } else { // Not an object, check for a string.
-                val dateStr = json.optString(DATE)
-                if (dateStr.isNotEmpty()) {
-                    try {
-                        val dateNum = DateParser.toMilliseconds(dateStr, DateParser.ISO_FULL)
-                        return dateFromLong(dateNum, FORMAT_RELAXED)
-                    } catch (e: Throwable) {
-                        logErr(e)
-                    }
-                }
-            }
-        }
-
-        return null // No matching type found.
+        return ObjectID.parseJSON(json) ?:
+            Binary.parseJSON(json) ?:
+            Date.parseJSON(json)
     }
 
     private fun logErr (e: Throwable) {
         val msg = e.localizedMessage
         if (msg != null) LongLog.v("Bson", msg)
-    }
-
-    private fun parseBinaryJson (payloadStr: String, typeStr: String, format: Int) : Binary? {
-        if (payloadStr.isNotEmpty() && typeStr.isNotEmpty()) {
-            try {
-                val payload = Base64.decode(payloadStr, Base64.DEFAULT)
-                val subtype = typeStr.toUByte(16)
-                return Binary(payload, subtype, format)
-            } catch (e: Throwable) {
-                logErr(e)
-            }
-        }
-
-        return null
-    }
-
-    private fun dateFromLong (dateNum: Long, format: Int): Date {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = dateNum
-        return Date(calendar, format)
     }
 
     abstract class BsonExtension (val outputFormat: Int) {
@@ -115,6 +49,20 @@ object Bson {
         fun toUInt() : UInt {
             return id.toUInt(16)
         }
+
+        companion object {
+            const val OBJECTID = "\$oid"
+
+            fun parseJSON (json: JSONObject) : ObjectID? {
+                if (json.has(OBJECTID)) {
+                    val idString = json.optString(OBJECTID)
+                    if (idString.isNotEmpty()) {
+                        return ObjectID(idString)
+                    }
+                }
+                return null
+            }
+        }
     }
 
     /**
@@ -135,6 +83,11 @@ object Bson {
         }
 
         companion object {
+            const val BINARY = "\$binary"
+            const val BINARY_PAYLOAD = "base64"
+            const val BINARY_SUBTYPE = "subType"
+            const val BINARY_V1_TYPE = "\$type"
+
             @ExperimentalUnsignedTypes
             const val SUBTYPE_GENERIC: UByte = 0u
             @ExperimentalUnsignedTypes
@@ -149,6 +102,40 @@ object Bson {
             const val SUBTYPE_MD5: UByte = 5u
             @ExperimentalUnsignedTypes
             const val SUBTYPE_ENCRYPTED: UByte = 6u
+
+            @ExperimentalUnsignedTypes
+            fun parseJSON (json: JSONObject) : Binary? {
+                if (json.has(BINARY)) {
+                    if (json.has(BINARY_V1_TYPE)) {
+                        val payloadStr = json.optString(BINARY)
+                        val typeStr = json.optString(BINARY_V1_TYPE)
+                        return parseBinaryJson(payloadStr, typeStr, FORMAT_V1)
+                    } else {
+                        val binData = json.optJSONObject(BINARY)
+                        if (binData != null && binData.has(BINARY_PAYLOAD) && binData.has(BINARY_SUBTYPE)) {
+                            val payloadStr = binData.optString(BINARY_PAYLOAD)
+                            val typeStr = binData.optString(BINARY_SUBTYPE)
+                            return parseBinaryJson(payloadStr, typeStr, FORMAT_RELAXED)
+                        }
+                    }
+                }
+                return null
+            }
+
+            @ExperimentalUnsignedTypes
+            private fun parseBinaryJson (payloadStr: String, typeStr: String, format: Int) : Binary? {
+                if (payloadStr.isNotEmpty() && typeStr.isNotEmpty()) {
+                    try {
+                        val payload = Base64.decode(payloadStr, Base64.DEFAULT)
+                        val subtype = typeStr.toUByte(16)
+                        return Binary(payload, subtype, format)
+                    } catch (e: Throwable) {
+                        logErr(e)
+                    }
+                }
+
+                return null
+            }
         }
     }
 
@@ -170,5 +157,39 @@ object Bson {
 
             return json
         }
+
+        companion object {
+            const val DATE = "\$date"
+
+            fun parseJSON (json: JSONObject) : Date? {
+                if (json.has(DATE)) {
+                    val dateObj = json.optJSONObject(DATE)
+                    if (dateObj != null) { // It was a Date object.
+                        if (dateObj.has(NUMBER_LONG)) {
+                            val dateNum = dateObj.optLong(NUMBER_LONG)
+                            return dateFromLong(dateNum, FORMAT_CANONICAL)
+                        }
+                    } else { // Not an object, check for a string.
+                        val dateStr = json.optString(DATE)
+                        if (dateStr.isNotEmpty()) {
+                            try {
+                                val dateNum = DateParser.toMilliseconds(dateStr, DateParser.ISO_FULL)
+                                return dateFromLong(dateNum, FORMAT_RELAXED)
+                            } catch (e: Throwable) {
+                                logErr(e)
+                            }
+                        }
+                    }
+                }
+                return null
+            }
+
+            private fun dateFromLong (dateNum: Long, format: Int): Date {
+                val calendar = Calendar.getInstance()
+                calendar.timeInMillis = dateNum
+                return Date(calendar, format)
+            }
+        }
     }
+
 }
