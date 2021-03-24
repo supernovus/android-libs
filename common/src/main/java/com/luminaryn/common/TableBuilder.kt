@@ -1,6 +1,7 @@
 package com.luminaryn.common
 
 import android.content.Context
+import android.graphics.Typeface
 import android.view.View
 import android.widget.TableLayout
 import android.widget.TableRow
@@ -80,6 +81,27 @@ class TableBuilder(
             add(view, newLayoutParams)
             return view
         }
+
+        /**
+         * A shortcut for making a "header" column.
+         */
+        fun header (text: CharSequence? = null, newLayoutParams: Boolean = false) : TextView {
+            val elem = addText(text, newLayoutParams)
+            elem.setTypeface(null, Typeface.BOLD)
+            return elem
+        }
+
+        /**
+         * Set a tag on the row element.
+         */
+        @JvmOverloads
+        fun tag (tag: Any, id: Int? = null) {
+            if (id != null) {
+                element.setTag(id, tag)
+            } else {
+                element.tag = tag
+            }
+        }
     }
 
     /**
@@ -114,6 +136,7 @@ class TableBuilder(
      * @param newChildLayout If true, use new layout params for the children instead of the default.
      * @return The newly created Row object.
      */
+    @JvmOverloads
     fun rowAt(existingChild: View, insertAfter: Boolean = false, newRowLayout: Boolean = false, newChildLayout: Boolean = false) : Row {
         val existingIndex = table?.indexOfChild(existingChild) ?: -1
         val insertIndex = if (insertAfter && existingIndex != -1) existingIndex + 1 else existingIndex
@@ -133,8 +156,51 @@ class TableBuilder(
      * @param newChildLayout If true, use new layout params for the children instead of the default.
      * @return The newly created Row object.
      */
+    @JvmOverloads
     fun rowAt(existingRow: Row, insertAfter: Boolean = false, newRowLayout: Boolean = false, newChildLayout: Boolean = false) : Row {
         return rowAt(existingRow.element, insertAfter, newRowLayout, newChildLayout)
+    }
+
+    /**
+     * Find existing views with a specific tag.
+     *
+     * Only works if the [table] property is set.
+     *
+     * @param tag See Views.getViewsByTag
+     * @param id See Views.getViewsByTag
+     * @param recurseDepth Maximum depth of recursion. See Views.getViewsByTag for details.
+     */
+    @JvmOverloads
+    fun findWithTag (tag: Any, id: Int? = null, recurseDepth: Int = ROWS) : ArrayList<View>? {
+        if (table != null) {
+            return Views.getViewsByTag(table, tag, id, recurseDepth)
+        } else {
+            return null
+        }
+    }
+
+    /**
+     * Find existing views with a specific tag.
+     *
+     * Only works if the [table] property is set.
+     *
+     * @param tags See Views.getViewsByTags
+     * @param defTag See Views.getViewsByTags
+     * @param recurseDepth See Views.getViewsByTags
+     */
+    @JvmOverloads
+    fun findWithTags (tags: HashMap<Int,Any>, defTag: Any? = null, recurseDepth: Int = ROWS) : ArrayList<View>? {
+        if (table != null) {
+            return Views.getViewsByTags(table, tags, defTag, recurseDepth)
+        } else {
+            return null
+        }
+    }
+
+    companion object {
+        const val ROWS = 0
+        const val COLS = 1
+        const val ANY = -1
     }
 
 }

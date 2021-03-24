@@ -13,19 +13,25 @@ import java.lang.Exception
  * @param context The application context we get the SharedPreferences from.
  * @param preferenceName The name of the shared preference store to get from the context.
  */
-open class Settings(protected val context: Context, preferenceName: String?) {
+open class Settings(protected val context: Context, protected val preferenceName: String) {
 
-    val preferences: SharedPreferences = context.getSharedPreferences(preferenceName, 0)
-    protected var editor: SharedPreferences.Editor? = null
-
-    @SuppressLint("CommitPrefEdits")
-    @JvmName("getEditorInstance")
-    fun getEditor(): SharedPreferences.Editor? {
-        if (editor == null) {
-            editor = preferences.edit()
+    var preferences: SharedPreferences? = null
+        get() {
+            if (field == null) {
+                field = context.getSharedPreferences(preferenceName, 0)
+            }
+            return field
         }
-        return editor
-    }
+        private set
+
+    protected var editor: SharedPreferences.Editor? = null
+        @SuppressLint("CommitPrefEdits")
+        get() {
+            if (field == null) {
+                field = preferences?.edit()
+            }
+            return field
+        }
 
     /**
      * Cancel the current editing operation.
@@ -41,14 +47,15 @@ open class Settings(protected val context: Context, preferenceName: String?) {
      * If using apply() we return true. If there is no active editor we return false.
      */
     fun save(atomic: Boolean): Boolean {
+        val editor = editor
         return if (editor != null) {
             if (atomic) {
-                val ret = editor!!.commit()
-                editor = null
+                val ret = editor.commit()
+                this.editor = null
                 ret
             } else {
-                editor!!.apply()
-                editor = null
+                editor.apply()
+                this.editor = null
                 true
             }
         } else {
@@ -67,32 +74,32 @@ open class Settings(protected val context: Context, preferenceName: String?) {
 
     @JvmOverloads
     fun getBoolean(key: String, defValue: Boolean = false): Boolean {
-        return preferences.getBoolean(key, defValue)
+        return preferences!!.getBoolean(key, defValue)
     }
 
     @JvmOverloads
     fun getFloat(key: String, defValue: Float = 0f): Float {
-        return preferences.getFloat(key, defValue)
+        return preferences!!.getFloat(key, defValue)
     }
 
     @JvmOverloads
     fun getInt(key: String, defValue: Int = 0): Int {
-        return preferences.getInt(key, defValue)
+        return preferences!!.getInt(key, defValue)
     }
 
     @JvmOverloads
     fun getLong(key: String, defValue: Long = 0): Long {
-        return preferences.getLong(key, defValue)
+        return preferences!!.getLong(key, defValue)
     }
 
     @JvmOverloads
     fun getString(key: String, defValue: String? = ""): String? {
-        return preferences.getString(key, defValue)
+        return preferences!!.getString(key, defValue)
     }
 
     @JvmOverloads
     fun getStringSet(key: String, defValue: MutableSet<String>? = null): MutableSet<String>? {
-        return preferences.getStringSet(key, defValue);
+        return preferences!!.getStringSet(key, defValue);
     }
 
     @JvmOverloads
@@ -126,11 +133,11 @@ open class Settings(protected val context: Context, preferenceName: String?) {
     }
 
     fun contains(key: String): Boolean {
-        return preferences.contains(key);
+        return preferences!!.contains(key);
     }
 
     fun getAll(expandJSON: Boolean): Map<String, *> {
-        val prefMap = preferences.getAll();
+        val prefMap = preferences!!.getAll();
         if (expandJSON) {
             val expMap = HashMap<String, Any?>()
             for ((key, value) in prefMap) {
@@ -158,32 +165,32 @@ open class Settings(protected val context: Context, preferenceName: String?) {
         get () = getAll(false).keys
 
     fun putBoolean(key: String, value: Boolean): Settings {
-        getEditor()?.putBoolean(key, value);
+        editor?.putBoolean(key, value);
         return this;
     }
 
     fun putFloat(key: String, value: Float): Settings {
-        getEditor()?.putFloat(key, value);
+        editor?.putFloat(key, value);
         return this
     }
 
     fun putInt(key: String, value: Int): Settings {
-        getEditor()?.putInt(key, value);
+        editor?.putInt(key, value);
         return this
     }
 
     fun putLong(key: String, value: Long): Settings {
-        getEditor()?.putLong(key, value);
+        editor?.putLong(key, value);
         return this
     }
 
     fun putString(key: String, value: String): Settings {
-        getEditor()?.putString(key, value);
+        editor?.putString(key, value);
         return this
     }
 
     fun putStringSet(key: String, value: Set<String>): Settings {
-        getEditor()?.putStringSet(key, value);
+        editor?.putStringSet(key, value);
         return this
     }
 
@@ -301,7 +308,7 @@ open class Settings(protected val context: Context, preferenceName: String?) {
     }
 
     fun remove(key: String): Settings {
-        getEditor()?.remove(key);
+        editor?.remove(key);
         return this
     }
 
