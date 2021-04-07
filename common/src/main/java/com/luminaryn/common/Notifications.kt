@@ -110,7 +110,7 @@ open class Notifications(private val context: Context, private val broadcastClas
      * @param [id] The channel id we want to get.
      */
     @TargetApi(26)
-    fun getChannel(id: String?): NotificationChannel? {
+    fun getNotificationChannel(id: String?): NotificationChannel? {
         return notificationManager.getNotificationChannel(id)
     }
 
@@ -522,7 +522,7 @@ open class Notifications(private val context: Context, private val broadcastClas
                 "star" to android.R.drawable.btn_star,
                 "check" to android.R.drawable.checkbox_on_background,
         )
-        const val DEFAULT_ICON = "alert"
+        const val DEFAULT_ICON = "info"
 
         const val DEFAULT_TAG = "Notifications"
     }

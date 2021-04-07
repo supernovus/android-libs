@@ -7,12 +7,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.core.content.FileProvider
 import com.luminaryn.common.LongLog.d
 import com.luminaryn.common.LongLog.e
 import com.luminaryn.common.Notifications
 import org.json.JSONObject
-import java.io.File
 
 /**
  * A class for building a web service which can install updates.
@@ -289,7 +287,7 @@ open class Updater : Installer {
             val notifications = Notifications(context, broadcastClass)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 // Ensure the channel exists.
-                if (notifications.getChannel(notificationChannelId) == null) {
+                if (notifications.getNotificationChannel(notificationChannelId) == null) {
                     if (notificationChannelName == 0) {
                         e(TAG, "No channel name string id specified, cannot continue.")
                         return
