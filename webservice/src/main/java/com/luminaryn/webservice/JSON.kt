@@ -128,6 +128,20 @@ open class JSON : HTTP {
         DELETE(uri, fromClosure(closure))
     }
 
+    fun OPTIONS(uri: String, data: Any?, handler: JSONResponseHandler) {
+        val body = if (data is JSONObject)
+            jsonBody(data)
+        else if (data is Map<*, *>)
+            jsonBody(JSONObject(data))
+        else
+            null
+        sendRequest(makeRequest(uri, headers).method("OPTIONS", body).build(), JSONCallback(handler, this))
+    }
+
+    fun OPTIONS(uri: String, data: Any?, closure: (JSONObject) -> Unit) {
+        OPTIONS(uri, data, fromClosure(closure))
+    }
+
     private fun jsonBuildErr(e: JSONException) {
         if (logLevel >= LOG_ERRORS) {
             Log.e(TAG, "JSON error when building error object: " + e.message)

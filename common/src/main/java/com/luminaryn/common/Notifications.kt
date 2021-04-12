@@ -393,7 +393,7 @@ open class Notifications(private val context: Context, private val broadcastClas
         }
 
         fun makeNotification (): Notification.Builder {
-            val icon = if (this.icon is Int || this.icon is Icon) this.icon else ICONS[DEFAULT_ICON]
+            val icon = if (this.icon is Int || this.icon is Icon) this.icon else if (this.icon is String && ICONS.containsKey(this.icon)) ICONS[this.icon] else ICONS[DEFAULT_ICON]
             return parent.createNotification(id, icon, priority)
         }
 
@@ -401,8 +401,12 @@ open class Notifications(private val context: Context, private val broadcastClas
         fun makeNotification (title: String, bodyShort: String?, bodyLong: String? = null, useIcon: Any? = null): Notification.Builder {
             val icon = if (useIcon is Int || useIcon is Icon)
                 useIcon
+            else if (useIcon is String && ICONS.containsKey(useIcon))
+                ICONS[useIcon]
             else if (this.icon is Int || this.icon is Icon)
                 this.icon
+            else if (this.icon is String && ICONS.containsKey(this.icon))
+                ICONS[this.icon]
             else
                 ICONS[DEFAULT_ICON]
 
