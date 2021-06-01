@@ -18,20 +18,30 @@ object Thumbnails {
 
     @JvmStatic
     @JvmOverloads
+    fun thumbnail(filepath: String,
+                  width: Int = DEFAULT_WIDTH,
+                  height: Int = DEFAULT_HEIGHT,
+                  vidType: Int = DEFAULT_VIDTYPE): Bitmap? {
+        val ext = Files.getExtension(filepath).toUpperCase()
+        if (ext == "") {
+            return null
+        }
+        return when (ext) {
+            "JPG", "PNG", "JPEG", "WEBP", "HEIC", "GIF" -> fromImage(filepath, width, height)
+            "MP4", "MKV", "AVI", "WEBM", "M4V", "MPG", "MPEG", "MPEG4", "MOV" -> fromVideo(filepath, vidType)
+            else -> null
+        }
+    }
+    
+    @JvmStatic
+    @JvmOverloads
     fun base64Thumbnail(filepath: String,
                         width: Int = DEFAULT_WIDTH,
                         height: Int = DEFAULT_HEIGHT,
                         vidType: Int = DEFAULT_VIDTYPE,
                         quality: Int = DEFAULT_QUALITY): String {
-        val ext = Files.getExtension(filepath).toUpperCase()
-        if (ext == "") {
-            return ""
-        }
-        return when (ext) {
-            "JPG", "PNG", "JPEG", "WEBP", "HEIC", "GIF" -> base64FromImage(filepath, width, height, quality)
-            "MP4", "MKV", "AVI", "WEBM", "M4V", "MPG", "MPEG", "MPEG4", "MOV" -> base64FromVideo(filepath, vidType, quality)
-            else -> ""
-        }
+        val thumbnail = thumbnail(filepath, width, height, vidType)
+        return if (thumbnail != null) bitmapToBase64(thumbnail, quality) else ""
     }
 
     @JvmStatic
@@ -49,20 +59,33 @@ object Thumbnails {
 
     @JvmStatic
     @JvmOverloads
+    fun fromImage(filePath: String,
+                        width: Int = DEFAULT_WIDTH,
+                        height: Int = DEFAULT_HEIGHT): Bitmap {
+        return ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(filePath), width, height)
+    }
+    
+    @JvmStatic
+    @JvmOverloads
     fun base64FromImage(filePath: String,
                         width: Int = DEFAULT_WIDTH,
                         height: Int = DEFAULT_HEIGHT,
                         quality: Int = DEFAULT_QUALITY): String {
-        val bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(filePath), width, height)
-        return bitmapToBase64(bitmap, quality)
+        return bitmapToBase64(fromImage(filePath, width, height), quality)
     }
 
+    @JvmStatic
+    @JvmOverloads
+    fun fromVideo(filePath: String,
+                        vidType: Int = DEFAULT_VIDTYPE): Bitmap {
+        return ThumbnailUtils.createVideoThumbnail(filePath, vidType)
+    }
+    
     @JvmStatic
     @JvmOverloads
     fun base64FromVideo(filePath: String,
                         vidType: Int = DEFAULT_VIDTYPE,
                         quality: Int = DEFAULT_QUALITY): String {
-        val bitmap = ThumbnailUtils.createVideoThumbnail(filePath, vidType)
-        return bitmapToBase64(bitmap, quality)
+        return bitmapToBase64(fromVideo(filePath, vidType), quality)
     }
 }
