@@ -9,6 +9,7 @@ object Files {
         return File(filename).extension;
     }
 
+    @JvmStatic
     fun isImage(filename: String): Boolean {
         val ext = getExtension(filename).uppercase(Locale.getDefault())
         return when (ext) {
@@ -17,6 +18,7 @@ object Files {
         }
     }
 
+    @JvmStatic
     fun isVideo(filename: String): Boolean {
         val ext = getExtension(filename).uppercase(Locale.getDefault())
         return when (ext) {
