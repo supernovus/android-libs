@@ -72,7 +72,7 @@ object Bson {
     constructor(val payload: ByteArray, val subtype: UByte, outputFormat: Int = FORMAT_RELAXED)
         : BsonExtension(outputFormat) {
 
-        @ExperimentalUnsignedTypes
+        //@ExperimentalUnsignedTypes
         override fun toJSON(outputFormat: Int): JSONObject {
             val json = JSONObject()
             if (outputFormat == FORMAT_V1) {

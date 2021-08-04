@@ -2,6 +2,7 @@ package com.luminaryn.common
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 
 /**
  * A wrapper around the Application class that adds methods for everything in the AppInfo class.
@@ -20,17 +21,29 @@ abstract class AppBase : Application() {
         return AppInfo.isServiceRunning(this, serviceClass)
     }
 
-    fun switchActivity(activityClass: Class<*>, flags: Int = Intent.FLAG_ACTIVITY_NEW_TASK): Intent {
+    @JvmOverloads
+    fun getActivityIntent(activityClass: Class<*>, flags: Int? = null, data: Uri? = null): Intent {
         val activityIntent = Intent(this, activityClass)
-        activityIntent.setFlags(flags)
-        this.startActivity(activityIntent)
+        if (flags != null) {
+            activityIntent.flags = flags
+        }
+        if (data != null) {
+            activityIntent.data = data
+        }
+        return activityIntent;
+    }
+
+    @JvmOverloads
+    fun switchActivity(activityClass: Class<*>, flags: Int? = Intent.FLAG_ACTIVITY_NEW_TASK, data: Uri? = null): Intent {
+        val activityIntent = getActivityIntent(activityClass, flags, data)
+        startActivity(activityIntent)
         return activityIntent
     }
 
     fun launchApp(packageName: String): Intent? {
-        val launchIntent = this.packageManager.getLaunchIntentForPackage(packageName)
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         if (launchIntent != null) {
-            this.startActivity(launchIntent)
+            startActivity(launchIntent)
         }
         return launchIntent
     }

@@ -53,11 +53,16 @@ open class JSON : HTTP {
         }
     }
 
-    fun detectData (data: Any): RequestBody {
+    fun detectData (data: Any?, default: RequestBody?): RequestBody? {
         if (data is RequestBody) return data
         if (data is JSONObject) return jsonBody(data)
         if (data is Map<*,*>) return jsonBody(JSONObject(data))
-        else throw Error("Invalid data type, could not convert to JSONObject")
+        return default
+    }
+
+    fun detectData(data: Any): RequestBody {
+        return detectData(data, null)
+            ?: throw Error("Invalid data type, could not convert to JSONObject")
     }
 
     fun jsonBody(data: JSONObject): RequestBody {
@@ -128,14 +133,17 @@ open class JSON : HTTP {
         DELETE(uri, fromClosure(closure))
     }
 
+    fun HTTP(method: String, uri: String, data: Any?, handler: JSONResponseHandler) {
+        val body = detectData(data, null)
+        sendRequest(makeRequest(uri, headers).method(method, body).build(), JSONCallback(handler, this))
+    }
+
+    fun HTTP(method: String, uri: String, data: Any?, closure: (JSONObject) -> Unit) {
+        HTTP(method, uri, data, fromClosure(closure))
+    }
+
     fun OPTIONS(uri: String, data: Any?, handler: JSONResponseHandler) {
-        val body = if (data is JSONObject)
-            jsonBody(data)
-        else if (data is Map<*, *>)
-            jsonBody(JSONObject(data))
-        else
-            null
-        sendRequest(makeRequest(uri, headers).method("OPTIONS", body).build(), JSONCallback(handler, this))
+        HTTP("OPTIONS", uri, data, handler)
     }
 
     fun OPTIONS(uri: String, data: Any?, closure: (JSONObject) -> Unit) {

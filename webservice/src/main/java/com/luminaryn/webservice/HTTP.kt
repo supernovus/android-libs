@@ -198,5 +198,25 @@ abstract class HTTP {
         @JvmStatic
         val uIHandler: Handler
             get() = Handler(Looper.getMainLooper())
+
+        fun qsval (value: Any): String {
+            if (value is String) return value
+            else if (value is Boolean) return if (value) "1" else "0"
+            else return value.toString()
+        }
+
+        /**
+         * Take a map of options and make a query string out of it.
+         */
+        fun query (opts: Map<String,Any>): String {
+            var query = ""
+            for (opt in opts) {
+                if (query.isEmpty()) query += "?" else query += "&"
+                query += opt.key
+                query += "="
+                query += qsval(opt.value)
+            }
+            return query
+        }
     }
 }

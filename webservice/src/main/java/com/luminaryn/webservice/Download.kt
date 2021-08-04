@@ -29,7 +29,7 @@ import java.io.IOException
  * }
  *
  */
-class Download {
+object Download {
     open class FileCallback(private var targetPath: String, var ws: HTTP, var handler: FileResponseHandler? = null) : Callback {
 
         override fun onFailure(call: Call, e: IOException) {
