@@ -30,7 +30,14 @@ import java.io.IOException
  *
  */
 object Download {
-    open class FileCallback(private var targetPath: String, var ws: HTTP, var handler: FileResponseHandler? = null) : Callback {
+    open class FileCallback(private var targetFile: File, var ws: HTTP) : Callback {
+
+        open var handler: FileResponseHandler? = null
+
+        @JvmOverloads
+        constructor(targetPath: String, ws: HTTP, handler: FileResponseHandler? = null) : this(File(targetPath), ws) {
+            this.handler = handler
+        }
 
         override fun onFailure(call: Call, e: IOException) {
             Log.e(ws.TAG, "Failure downloading file: " + e.message)
@@ -44,11 +51,10 @@ object Download {
             }
             try {
                 handler?.handleSuccessfulResponse(call, response)
-                val download = File(targetPath)
-                val sink = download.sink().buffer()
+                val sink = targetFile.sink().buffer()
                 sink.writeAll(response.body!!.source())
                 sink.close()
-                handler?.handleDownload(download)
+                handler?.handleDownload(targetFile)
             } catch (e: Exception) {
                 Log.v(ws.TAG, "Exception occurred trying to save downloaded file: " + e.message)
                 handler?.handleException(call, response, e)

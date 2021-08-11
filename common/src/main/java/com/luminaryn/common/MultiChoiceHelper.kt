@@ -2,7 +2,6 @@ package com.luminaryn.common
 
 import android.app.Activity
 import android.content.Context
-import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.Parcelable.Creator
@@ -17,14 +16,21 @@ import androidx.recyclerview.widget.RecyclerView
 
 /**
  * Helper class to reproduce ListView's modal MultiChoice mode with a RecyclerView.
- * Compatible with API 7+.
- * Declare and use this class from inside your Adapter.
+ *
+ * Adapted from the original Java version, and reworked a bit.
+ *
+ * https://gist.github.com/cbeyls/32b2b7a33caee29e97bfe81a949ba247
+ *
+ * The original author since writing this has rewritten it significantly, see the
+ * new version and decide if we want to move to it.
+ *
+ * https://github.com/cbeyls/fosdem-companion-android/blob/master/app/src/main/java/be/digitalia/fosdem/widgets/MultiChoiceHelper.kt
  *
  * @author Christophe Beyls
  */
 class MultiChoiceHelper(
     val activity: Activity,
-    val adapter: RecyclerView.Adapter<ViewHolder>
+    val adapter: RecyclerView.Adapter<*>
 ) {
     /**
      * A handy ViewHolder base class which works with the MultiChoiceHelper

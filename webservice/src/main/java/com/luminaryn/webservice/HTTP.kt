@@ -2,11 +2,13 @@ package com.luminaryn.webservice
 
 import android.os.Handler
 import android.os.Looper
+import com.luminaryn.webservice.extensions.asRequestBody
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.io.InputStream
 
 /**
  * Simple wrapper for OkHttp.
@@ -124,6 +126,15 @@ abstract class HTTP {
 
     fun formBody(fileFormName: String, fileName: String, byteArray: ByteArray, contentType: String): MultipartBody.Builder {
         return formBody(fileFormName, fileName, byteArray, contentType.toMediaType())
+    }
+
+    @JvmOverloads
+    fun formBody(fileFormName: String, fileName: String, inputStream: InputStream, contentType: MediaType = TYPE_DEFAULT_FILE): MultipartBody.Builder {
+        return formBody().addFormDataPart(fileFormName, fileName, inputStream.asRequestBody(contentType))
+    }
+
+    fun formBody(fileFormName: String, fileName: String, inputStream: InputStream, contentType: String): MultipartBody.Builder {
+        return formBody(fileFormName, fileName, inputStream, contentType.toMediaType())
     }
 
     /**

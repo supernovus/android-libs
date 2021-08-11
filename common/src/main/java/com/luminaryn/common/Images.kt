@@ -4,11 +4,13 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
 import java.io.*
+import java.lang.Exception
 import java.util.*
 
 object Images {
@@ -96,5 +98,10 @@ object Images {
     @JvmOverloads
     fun toJPEG(bitmap: Bitmap, quality: Int = 100): ByteArray {
         return toJPEGStream(bitmap, quality).toByteArray()
+    }
+
+    fun fromBase64(string: String): Bitmap? {
+        val bytes = Base64.decode(string, Base64.DEFAULT)
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     }
 }
