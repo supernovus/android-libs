@@ -225,7 +225,7 @@ class Tags {
 
         val tag = if (normalizeWant) normalize(wantTag) else wantTag
 
-        LongLog.v(TAG, "has($tag[$wantTag], $normalizeWant, $normalizeHas, $recurseSets)")
+        //LongLog.v(TAG, "has($tag[$wantTag], $normalizeWant, $normalizeHas, $recurseSets)")
 
         if (indexOf(tag, false, normalizeHas) != -1) {
             // We have the tag in our direct list.
@@ -252,7 +252,7 @@ class Tags {
             normalizeHas: Boolean = normalizeHasDefault,
             recurseHas: Int = 0): Boolean {
 
-        LongLog.v(TAG, "any(${wantTags.toJSON()}, $normalizeWant, $normalizeHas, $recurseHas)")
+        //LongLog.v(TAG, "any(${wantTags.toJSON()}, $normalizeWant, $normalizeHas, $recurseHas)")
 
         for (child in wantTags.children) {
             if (child.set != null && all(child.set, normalizeWant, normalizeHas, recurseHas)) {
@@ -277,7 +277,7 @@ class Tags {
             normalizeHas: Boolean = normalizeHasDefault,
             recurseHas: Int = 0): Boolean {
 
-        LongLog.v(TAG, "all(${wantTags.toJSON()}, $normalizeWant, $normalizeHas, $recurseHas)")
+        //LongLog.v(TAG, "all(${wantTags.toJSON()}, $normalizeWant, $normalizeHas, $recurseHas)")
 
         for (child in wantTags.children) {
             if (child.set != null && !any(child.set, normalizeWant, normalizeHas, recurseHas)) {

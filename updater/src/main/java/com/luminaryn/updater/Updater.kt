@@ -142,6 +142,18 @@ open class Updater : Installer {
     protected var packageUrl: String? = null
 
     /**
+     * When installing, the flags to pass to installApk()
+     */
+    protected var installFlags: Int = 0
+
+    /**
+     * Attempt to auto-install instead of popping up a notification.
+     * This is best used with Android 12+ and appropriate installFlags to allow
+     * for silence installations.
+     */
+    protected var autoInstall: Boolean = false
+
+    /**
      * A constructor used by the Builder.build() method.
      * This is the preferred way to build Updater instances.
      *
@@ -170,10 +182,6 @@ open class Updater : Installer {
         }
         if (builder.PROVIDER != null) {
             provider = builder.PROVIDER
-        }
-        else
-        {
-            provider = "$TAG.fileprovider"
         }
         if (builder.EXTRAPREFIX != null) {
             EXTRAPREFIX = builder.EXTRAPREFIX
@@ -237,6 +245,18 @@ open class Updater : Installer {
         if (builder.packageUrl != null) {
             packageUrl = builder.packageUrl
         }
+        if (builder.installFlags != 0) {
+            installFlags = builder.installFlags
+        }
+        if (builder.autoInstall != null) {
+            autoInstall = builder.autoInstall!!
+        }
+        if (builder.packageName != null) {
+            packageName = builder.packageName
+        }
+        if (builder.streamName != null) {
+            streamName = builder.streamName!!
+        }
     }
 
     private val versionFromContext: Unit
@@ -284,43 +304,51 @@ open class Updater : Installer {
      */
     fun checkForUpdates(newestVersionCode: Int, newestVersionName: String?, newestUrl: String) {
         if (newestVersionCode > currentVersionCode) {
-            val notifications = Notifications(context, broadcastClass)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Ensure the channel exists.
-                if (notifications.getNotificationChannel(notificationChannelId) == null) {
-                    if (notificationChannelName == 0) {
-                        e(TAG, "No channel name string id specified, cannot continue.")
-                        return
-                    }
-                    val name = context.getString(notificationChannelName)
-                    if (notificationChannelDesc == 0) {
-                        notifications.createChannel(notificationChannelId!!, name, null, notificationChannelPrio)
-                    } else {
-                        val desc = context.getString(notificationChannelDesc)
-                        notifications.createChannel(notificationChannelId!!, name, desc, notificationChannelPrio)
-                    }
+            if (autoInstall) {
+                downloadUpdate(newestUrl, filename, installFlags)
+            } else {
+                showUpdateNotification(newestVersionCode, newestVersionName, newestUrl)
+            }
+        }
+    }
+
+    protected fun showUpdateNotification(newestVersionCode: Int, newestVersionName: String?, newestUrl: String) {
+        val notifications = Notifications(context, broadcastClass)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Ensure the channel exists.
+            if (notifications.getNotificationChannel(notificationChannelId) == null) {
+                if (notificationChannelName == 0) {
+                    e(TAG, "No channel name string id specified, cannot continue.")
+                    return
+                }
+                val name = context.getString(notificationChannelName)
+                if (notificationChannelDesc == 0) {
+                    notifications.createChannel(notificationChannelId!!, name, null, notificationChannelPrio)
+                } else {
+                    val desc = context.getString(notificationChannelDesc)
+                    notifications.createChannel(notificationChannelId!!, name, desc, notificationChannelPrio)
                 }
             }
-            val title = context.getString(notificationTitle)
-            val message = context.getString(notificationMessage, currentVersionName, newestVersionName)
-            d(TAG, "Notification title: $title")
-            d(TAG, "Notification message: $message")
-            d(TAG, "Newest URL: $newestUrl")
-            val bundle = Bundle()
-            bundle.putString(URL(), newestUrl)
-            d(TAG, "Extras Bundle: $bundle")
-            val intent = notifications.createBroadcast(ACTION!!, bundle)
-            val not = notifications.createNotification(
-                notificationChannelId,
-                title,
-                message,
-                null,
-                notificationIcon,
-                notificationPrio,
-                intent
-            )
-            notifications.show(NOTIFICATION_ID, not)
         }
+        val title = context.getString(notificationTitle)
+        val message = context.getString(notificationMessage, currentVersionName, newestVersionName)
+        d(TAG, "Notification title: $title")
+        d(TAG, "Notification message: $message")
+        d(TAG, "Newest URL: $newestUrl")
+        val bundle = Bundle()
+        bundle.putString(URL(), newestUrl)
+        d(TAG, "Extras Bundle: $bundle")
+        val intent = notifications.createBroadcast(ACTION!!, bundle)
+        val not = notifications.createNotification(
+            notificationChannelId,
+            title,
+            message,
+            null,
+            notificationIcon,
+            notificationPrio,
+            intent
+        )
+        notifications.show(NOTIFICATION_ID, not)
     }
 
     /**
@@ -365,7 +393,7 @@ open class Updater : Installer {
             logError("Must specify a url to download")
             return
         }
-        downloadUpdate(url, filename)
+        downloadUpdate(url, filename, installFlags)
     }
 
     /**
@@ -477,6 +505,10 @@ open class Updater : Installer {
         var updatesCodeKey: String? = null,
         var updatesUrlKey: String? = null,
         var packageUrl: String? = null,
+        var installFlags: Int = 0,
+        var autoInstall: Boolean? = null,
+        var packageName: String? = null,
+        var streamName: String? = null,
     ) {
         fun tag(tag: String?) = apply {
             TAG = tag
@@ -556,6 +588,34 @@ open class Updater : Installer {
 
         fun packageUrl(url: String?) = apply {
             packageUrl = url
+        }
+
+        fun usePM(value: Boolean) = apply {
+            installFlags = if (value) {
+                installFlags or USE_PM
+            } else {
+                installFlags - (installFlags and USE_PM)
+            }
+        }
+
+        fun trySilent(value: Boolean) = apply {
+            installFlags = if (value) {
+                installFlags or TRY_SILENT
+            } else {
+                installFlags - (installFlags and TRY_SILENT)
+            }
+        }
+
+        fun autoInstall(value: Boolean) = apply {
+            autoInstall = value
+        }
+
+        fun packageName(value: String) = apply {
+            packageName = value
+        }
+
+        fun streamName(value: String) = apply {
+            streamName = value
         }
 
         fun build() = Updater(this)
