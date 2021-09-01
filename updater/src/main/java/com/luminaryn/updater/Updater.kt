@@ -257,6 +257,9 @@ open class Updater : Installer {
         if (builder.streamName != null) {
             streamName = builder.streamName!!
         }
+        if (builder.completeIntent != null) {
+            completeIntent = builder.completeIntent!!
+        }
     }
 
     private val versionFromContext: Unit
@@ -509,6 +512,7 @@ open class Updater : Installer {
         var autoInstall: Boolean? = null,
         var packageName: String? = null,
         var streamName: String? = null,
+        var completeIntent: String? = null,
     ) {
         fun tag(tag: String?) = apply {
             TAG = tag
@@ -616,6 +620,10 @@ open class Updater : Installer {
 
         fun streamName(value: String) = apply {
             streamName = value
+        }
+
+        fun completeIntent(value: String) = apply {
+            completeIntent = value
         }
 
         fun build() = Updater(this)
