@@ -1,4 +1,4 @@
-package com.luminaryn.common
+package com.luminaryn.viewhelpers
 
 import android.app.Activity
 import android.content.Context
@@ -25,6 +25,9 @@ import androidx.recyclerview.widget.RecyclerView
  * new version and decide if we want to move to it.
  *
  * https://github.com/cbeyls/fosdem-companion-android/blob/master/app/src/main/java/be/digitalia/fosdem/widgets/MultiChoiceHelper.kt
+ *
+ * Moving this to a different module, as there's a more "official" plugin that provides almost
+ * the same functionality that is probably the better way to go moving forward.
  *
  * @author Christophe Beyls
  */

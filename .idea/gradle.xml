@@ -13,8 +13,10 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/common" />
+            <option value="$PROJECT_DIR$/fragadapters" />
             <option value="$PROJECT_DIR$/interop" />
             <option value="$PROJECT_DIR$/updater" />
+            <option value="$PROJECT_DIR$/viewhelpers" />
             <option value="$PROJECT_DIR$/webservice" />
           </set>
         </option>
