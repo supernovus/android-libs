@@ -9,7 +9,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.random.Random
 
-abstract class TabStateAdapter (activity: AppCompatActivity) : com.luminaryn.fragadapters.PaneStateAdapter(activity) {
+abstract class TabStateAdapter (activity: AppCompatActivity, val tabs: TabLayout, val pager: ViewPager2) : com.luminaryn.fragadapters.PaneStateAdapter(activity) {
 
     override val panes: ArrayList<TabPane> = ArrayList()
 
@@ -20,9 +20,6 @@ abstract class TabStateAdapter (activity: AppCompatActivity) : com.luminaryn.fra
     open val defaultManager: TabPane.Manager = TabPane.DefaultManager()
 
     val mediator: TabLayoutMediator
-
-    abstract val tabs: TabLayout
-    abstract val pager: ViewPager2
 
     init {
         setupAdapter(pager)
