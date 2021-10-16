@@ -304,6 +304,20 @@ open class Notifications(private val context: Context, private val broadcastClas
     }
 
     /**
+     * Close a notification we previously put up.
+     */
+    fun cancel(id: Int) {
+        notificationManager.cancel(id)
+    }
+
+    /**
+     * Close all notifications we've created.
+     */
+    fun cancelAll() {
+        notificationManager.cancelAll()
+    }
+
+    /**
      * Add a new channel specifying the values directly.
      *
      * @param id The unique identifier for this channel, will be registered in Android.

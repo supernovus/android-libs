@@ -201,14 +201,11 @@ abstract class HTTP {
         protected const val DEFAULT_TAG = "com.luminaryn.webservice"
         protected const val DEFAULT_LOG_LEVEL = LOG_NONE
 
-        /**
-         * Get a handler in the main UI looper.
-         *
-         * @return
-         */
+        /* Nixing as runOnUiThread makes this kinda useless.
         @JvmStatic
         val uIHandler: Handler
             get() = Handler(Looper.getMainLooper())
+         */
 
         fun qsval (value: Any): String {
             if (value is String) return value

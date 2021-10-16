@@ -3,8 +3,10 @@ package com.luminaryn.common
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.Error
 import java.lang.Exception
 
 /**
@@ -74,70 +76,122 @@ open class Settings(protected val context: Context, protected val preferenceName
 
     @JvmOverloads
     fun getBoolean(key: String, defValue: Boolean = false): Boolean {
-        return preferences!!.getBoolean(key, defValue)
+        try {
+            return preferences!!.getBoolean(key, defValue)
+        } catch (e: ClassCastException) {
+            return defValue
+        }
     }
 
     @JvmOverloads
-    fun getFloat(key: String, defValue: Float = 0f): Float {
-        return preferences!!.getFloat(key, defValue)
+    fun getFloat(key: String, defValue: Float = 0.0f): Float {
+        try {
+            return preferences!!.getFloat(key, defValue)
+        } catch (e: ClassCastException) {
+            return defValue
+        }
+    }
+
+    @JvmOverloads
+    fun getDouble(key: String, defValue: Double = 0.0): Double {
+        try {
+            return Double.fromBits(preferences!!.getLong(key, defValue.toRawBits()))
+        } catch (e: ClassCastException) {
+            return defValue
+        }
     }
 
     @JvmOverloads
     fun getInt(key: String, defValue: Int = 0): Int {
-        return preferences!!.getInt(key, defValue)
+        try {
+            return preferences!!.getInt(key, defValue)
+        } catch (e: ClassCastException) {
+            try {
+                return preferences!!.getLong(key, defValue.toLong()).toInt()
+            } catch (e2: ClassCastException) {
+                return defValue
+            }
+        }
     }
 
     @JvmOverloads
-    fun getLong(key: String, defValue: Long = 0): Long {
-        return preferences!!.getLong(key, defValue)
+    fun getLong(key: String, defValue: Long = 0L): Long {
+        try {
+            return preferences!!.getLong(key, defValue)
+        } catch (e: ClassCastException) {
+            try {
+                return preferences!!.getInt(key, defValue.toInt()).toLong()
+            } catch (e: ClassCastException) {
+                return defValue
+            }
+        }
     }
 
     @JvmOverloads
     fun getString(key: String, defValue: String? = ""): String? {
-        return preferences!!.getString(key, defValue)
+        try {
+            return preferences!!.getString(key, defValue)
+        } catch (e: ClassCastException) {
+            return defValue
+        }
     }
 
     @JvmOverloads
     fun getStringSet(key: String, defValue: MutableSet<String>? = null): MutableSet<String>? {
-        return preferences!!.getStringSet(key, defValue);
+        try {
+            return preferences!!.getStringSet(key, defValue)
+        } catch (e: ClassCastException) {
+            return defValue
+        }
     }
 
     @JvmOverloads
     fun getJSONObject(key: String, defValue: JSONObject? = null): JSONObject? {
-        val jsonText = getString(key);
-        return if (jsonText.isNullOrEmpty()) defValue else JSONObject(jsonText);
+        val jsonText = getString(key)
+        return if (jsonText.isNullOrEmpty()) defValue else JSONObject(jsonText)
     }
 
     @JvmOverloads
     fun getJSONArray(key: String, defValue: JSONArray? = null): JSONArray? {
-        val jsonText = getString(key);
-        return if (jsonText.isNullOrEmpty()) defValue else JSONArray(jsonText);
+        val jsonText = getString(key)
+        return if (jsonText.isNullOrEmpty()) defValue else JSONArray(jsonText)
     }
 
     @JvmOverloads
     fun getHashMap(key: String, defValue: HashMap<*,*>? = null): HashMap<*,*>? {
-        val jsonText = getString(key);
+        val jsonText = getString(key)
         return if (jsonText.isNullOrEmpty())
             defValue
         else
-            Json.toHashMap(JSONObject(jsonText), true);
+            Json.toHashMap(JSONObject(jsonText), true)
     }
 
     @JvmOverloads
     fun getArrayList(key: String, defValue: ArrayList<*>? = null): ArrayList<*>? {
-        val jsonText = getString(key);
+        val jsonText = getString(key)
         return if (jsonText.isNullOrEmpty())
             defValue
         else
             Json.toArrayList(JSONArray(jsonText), true);
     }
 
+    /**
+     * Get a Nested object that can look for further settings inside it, or fall back
+     * to top-level properties in the main Settings object.
+     *
+     * This is a weird bastard system created for one of my projects migrating to a new nested
+     * configuration model from an older flat model, while preserving backwards compatibility.
+     */
+    fun getNested(key: String): Nested {
+        return Nested(getJSONObject(key))
+    }
+
     fun contains(key: String): Boolean {
-        return preferences!!.contains(key);
+        return preferences!!.contains(key)
     }
 
     fun getAll(expandJSON: Boolean): Map<String, *> {
-        val prefMap = preferences!!.getAll();
+        val prefMap = preferences!!.all;
         if (expandJSON) {
             val expMap = HashMap<String, Any?>()
             for ((key, value) in prefMap) {
@@ -165,12 +219,17 @@ open class Settings(protected val context: Context, protected val preferenceName
         get () = getAll(false).keys
 
     fun putBoolean(key: String, value: Boolean): Settings {
-        editor?.putBoolean(key, value);
+        editor?.putBoolean(key, value)
         return this;
     }
 
     fun putFloat(key: String, value: Float): Settings {
-        editor?.putFloat(key, value);
+        editor?.putFloat(key, value)
+        return this
+    }
+
+    fun putDouble(key: String, value: Double): Settings {
+        editor?.putLong(key, value.toRawBits())
         return this
     }
 
@@ -180,17 +239,17 @@ open class Settings(protected val context: Context, protected val preferenceName
     }
 
     fun putLong(key: String, value: Long): Settings {
-        editor?.putLong(key, value);
+        editor?.putLong(key, value)
         return this
     }
 
     fun putString(key: String, value: String): Settings {
-        editor?.putString(key, value);
+        editor?.putString(key, value)
         return this
     }
 
     fun putStringSet(key: String, value: Set<String>): Settings {
-        editor?.putStringSet(key, value);
+        editor?.putStringSet(key, value)
         return this
     }
 
@@ -218,36 +277,43 @@ open class Settings(protected val context: Context, protected val preferenceName
      */
     fun putAll(values: Map<String, *>): Settings {
         for ((key, value) in values) {
-            if (value is Boolean) {
-                putBoolean(key, value)
-            }
-            else if (value is Float) {
-                putFloat(key, value)
-            }
-            else if (value is Int) {
-                putInt(key, value)
-            }
-            else if (value is Long) {
-                putLong(key, value)
-            }
-            else if (value is String) {
-                putString(key, value)
-            }
-            else if (value is JSONObject) {
-                putJSONObject(key, value)
-            }
-            else if (value is JSONArray) {
-                putJSONArray(key, value)
-            }
-            else if (value is Map<*,*>) {
-                putJSONObject(key, value)
-            }
-            else if (value is Collection<*>) {
-                putJSONArray(key, value)
-            }
-            else
-            {
-                throw Exception("Invalid value sent to Settings.putAll()")
+            when (value) {
+                null -> {
+                    remove(key)
+                }
+                is Boolean -> {
+                    putBoolean(key, value)
+                }
+                is Float -> {
+                    putFloat(key, value)
+                }
+                is Double -> {
+                    putDouble(key, value)
+                }
+                is Int -> {
+                    putInt(key, value)
+                }
+                is Long -> {
+                    putLong(key, value)
+                }
+                is String -> {
+                    putString(key, value)
+                }
+                is JSONObject -> {
+                    putJSONObject(key, value)
+                }
+                is JSONArray -> {
+                    putJSONArray(key, value)
+                }
+                is Map<*,*> -> {
+                    putJSONObject(key, value)
+                }
+                is Collection<*> -> {
+                    putJSONArray(key, value)
+                }
+                else -> {
+                    Log.v(TAG,"Unsupported data value: $value")
+                }
             }
         }
         return this
@@ -264,52 +330,164 @@ open class Settings(protected val context: Context, protected val preferenceName
         var updated = false;
         while (keys.hasNext()) {
             val key = keys.next() as String
-            val value = spec.get(key);
-            if (value is Boolean) {
-                if (this.getBoolean(key) != value) {
-                    this.putBoolean(key, value);
-                    updated = true;
+            when (val value = spec.get(key)) {
+                JSONObject.NULL -> {
+                    if (contains(key)) {
+                        remove(key)
+                        updated = true;
+                    }
                 }
-            }
-            else if (value is Float) {
-                if (this.getFloat(key) != value) {
-                    this.putFloat(key, value);
-                    updated = true;
+                is Boolean -> {
+                    if (getBoolean(key) != value) {
+                        putBoolean(key, value)
+                        updated = true
+                    }
                 }
-            }
-            else if (value is Long) {
-                if (this.getLong(key) != value) {
-                    this.putLong(key, value);
-                    updated = true;
+                is Float -> {
+                    if (this.getFloat(key) != value) {
+                        putFloat(key, value)
+                        updated = true
+                    }
                 }
-            }
-            else if (value is String) {
-                if (this.getString(key) != value) {
-                    this.putString(key, value);
-                    updated = true;
+                is Double -> {
+                    if (this.getDouble(key) != value) {
+                        putDouble(key, value)
+                        updated = true
+                    }
                 }
-            }
-            else if (value is JSONObject) {
-                val curJson = this.getJSONObject(key)
-                if (curJson == null || !curJson.equals(value)) {
-                    this.putJSONObject(key, value);
-                    updated = true;
+                is Int -> {
+                    if (getInt(key) != value) {
+                        putInt(key, value)
+                        updated = true
+                    }
                 }
-            }
-            else if (value is JSONArray) {
-                val curJson = this.getJSONArray(key);
-                if (curJson == null || !curJson.equals(value)) {
-                    this.putJSONArray(key, value);
-                    updated = true;
+                is Long -> {
+                    if (getLong(key) != value) {
+                        putLong(key, value)
+                        updated = true
+                    }
+                }
+                is String -> {
+                    if (getString(key) != value) {
+                        putString(key, value)
+                        updated = true
+                    }
+                }
+                is JSONObject -> {
+                    val curJson = getJSONObject(key)
+                    if (curJson == null || !curJson.equals(value)) {
+                        putJSONObject(key, value)
+                        updated = true
+                    }
+                }
+                is JSONArray -> {
+                    val curJson = getJSONArray(key)
+                    if (curJson == null || !curJson.equals(value)) {
+                        putJSONArray(key, value)
+                        updated = true
+                    }
+                }
+                else -> {
+                    Log.v(TAG, "Unsupported JSON value: $value")
                 }
             }
         }
-        return updated;
+        return updated
     }
 
     fun remove(key: String): Settings {
         editor?.remove(key);
         return this
+    }
+
+    /**
+     * A read-only nested object that can look for a property in a JSONObject, or find a fallback
+     * property in the parent Settings object.
+     *
+     * Supports most of the same get functions as the parent, but not all of them.
+     */
+    inner class Nested(private val data: JSONObject?) {
+        @JvmOverloads
+        fun getBoolean(key: String, fbkey: String?, defValue: Boolean = false): Boolean {
+            return if (data != null && data.has(key)) data.optBoolean(key, defValue)
+            else getBoolean(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getFloat(key: String, fbkey: String?, defValue: Float = 0.0f): Float {
+            return if (data != null && data.has(key))  data.optDouble(key, defValue.toDouble()).toFloat()
+            else getFloat(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getDouble(key: String, fbkey: String?, defValue: Double = 0.0): Double {
+            return if (data != null && data.has(key)) data.optDouble(key, defValue)
+            else getDouble(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getInt(key: String, fbkey: String?, defValue: Int = 0): Int {
+            return if (data != null && data.has(key)) data.optInt(key, defValue)
+            else getInt(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getLong(key: String, fbkey: String?, defValue: Long = 0L): Long {
+            return if (data != null && data.has(key)) data.optLong(key, defValue)
+            else getLong(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getString(key: String, fbkey: String?, defValue: String? = ""): String? {
+            return if (data != null && data.has(key)) data.optString(key, defValue)
+            else this@Settings.getString(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getJSONObject(key: String, fbkey: String?, defValue: JSONObject? = null): JSONObject? {
+            return if (data != null && data.has(key)) data.optJSONObject(key)
+            else getJSONObject(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getJSONArray(key: String, fbkey: String?, defValue: JSONArray? = null): JSONArray? {
+            return if (data != null && data.has(key)) data.optJSONArray(key)
+            else getJSONArray(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getHashMap(key: String, fbkey: String?, defValue: HashMap<*,*>? = null): HashMap<*,*>? {
+            if (data != null && data.has(key)) {
+                val json = data.optJSONObject(key)
+                if (json != null) {
+                    return Json.toHashMap(json, true)
+                }
+            }
+
+            return getHashMap(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun getArrayList(key: String, fbkey: String?, defValue: ArrayList<*>? = null): ArrayList<*>? {
+            if (data != null && data.has(key)) {
+                val json = data.optJSONArray(key)
+                if (json != null) {
+                    return Json.toArrayList(json, true)
+                }
+            }
+
+            return getArrayList(fbkey ?: key, defValue)
+        }
+
+        @JvmOverloads
+        fun contains(key: String, fbkey: String? = null): Boolean {
+            return if (data != null && data.has(key)) true
+            else this@Settings.contains(fbkey ?: key)
+        }
+    }
+
+    companion object {
+        const val TAG = "com.luminaryn.common.Settings"
     }
 
 }

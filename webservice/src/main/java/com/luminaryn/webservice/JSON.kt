@@ -14,17 +14,20 @@ import java.util.*
 /**
  * A class for communicating with JSON-based web services.
  *
- * Can be used standalone, or (preferrably) use a sub-class to add your method calls.
+ * Can be used standalone, or (preferably) use a sub-class to add your method calls.
  */
 open class JSON : HTTP {
-    constructor() : super() {}
-    constructor(url: String) : super(url) {}
-    protected constructor(builder: Builder) : super(builder) {}
+    constructor() : super()
+    constructor(url: String) : super(url)
+    protected constructor(builder: Builder) : super(builder)
+
+    var defaultRequestBody: RequestBody? = null
 
     interface JSONResponseHandler {
         fun handle(data: JSONObject)
     }
 
+    /* Use {runOnUiThread} instead of this bastardized mess.
     abstract class JSONUIResponseHandler : JSONResponseHandler {
         abstract fun setup(data: JSONObject): Runnable
         open val uIHandler: Handler
@@ -34,18 +37,19 @@ open class JSON : HTTP {
             uIHandler.post(setup(data))
         }
     }
+    */
 
-    open class JSONCallback internal constructor(private val handler: JSONResponseHandler, var ws: JSON) : Callback {
+    inner class JSONCallback internal constructor(private val handler: JSONResponseHandler) : Callback {
         override fun onFailure(call: Call, e: IOException) {
-            handler.handle(ws.errorMsg(arrayOf("internal", "http_failure", e.message)))
+            handler.handle(errorMsg(arrayOf("internal", "http_failure", e.message)))
         }
 
         override fun onResponse(call: Call, response: Response) {
-            handler.handle(ws.jsonResponse(response))
+            handler.handle(jsonResponse(response))
         }
     }
 
-    fun fromClosure (callback: (JSONObject) -> Unit): JSONResponseHandler {
+    fun fromClosure (callback: JSONClosure): JSONResponseHandler {
         return object : JSONResponseHandler {
             override fun handle(data: JSONObject) {
                callback(data)
@@ -53,16 +57,12 @@ open class JSON : HTTP {
         }
     }
 
-    fun detectData (data: Any?, default: RequestBody?): RequestBody? {
+    @JvmOverloads
+    fun detectData (data: Any?, default: RequestBody? = defaultRequestBody): RequestBody? {
         if (data is RequestBody) return data
         if (data is JSONObject) return jsonBody(data)
         if (data is Map<*,*>) return jsonBody(JSONObject(data))
         return default
-    }
-
-    fun detectData(data: Any): RequestBody {
-        return detectData(data, null)
-            ?: throw Error("Invalid data type, could not convert to JSONObject")
     }
 
     fun jsonBody(data: JSONObject): RequestBody {
@@ -70,31 +70,34 @@ open class JSON : HTTP {
     }
 
     fun GET(uri: String, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).get().build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri, headers).get().build(), JSONCallback(handler))
     }
 
-    fun GET(uri: String, closure: (JSONObject) -> Unit) {
+    fun GET(uri: String, closure: JSONClosure) {
         GET(uri, fromClosure(closure))
     }
 
     fun POST(uri: String, data: RequestBody, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).post(data).build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri, headers).post(data).build(), JSONCallback(handler))
     }
 
     fun POST(uri: String, data: JSONObject, handler: JSONResponseHandler) {
         POST(uri, jsonBody(data), handler)
     }
 
-    fun POST(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
+    fun POST(uri: String, data: JSONishMap, handler: JSONResponseHandler) {
         POST(uri, JSONObject(data), handler)
     }
 
-    fun POST(uri: String, data: Any, closure: (JSONObject) -> Unit) {
-        POST(uri, detectData(data), fromClosure(closure))
+    fun POST(uri: String, data: Any, closure: JSONClosure) {
+        val body = detectData(data)
+        if (body != null) {
+            POST(uri, body, fromClosure(closure))
+        }
     }
 
     fun PUT(uri: String, data: RequestBody, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).put(data).build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri, headers).put(data).build(), JSONCallback(handler))
     }
 
     fun PUT(uri: String, data: JSONObject, handler: JSONResponseHandler) {
@@ -106,11 +109,14 @@ open class JSON : HTTP {
     }
 
     fun PUT(uri: String, data: Any, closure: (JSONObject) -> Unit) {
-        PUT(uri, detectData(data), fromClosure(closure))
+        val body = detectData(data)
+        if (body != null) {
+            PUT(uri, body, fromClosure(closure))
+        }
     }
 
     fun PATCH(uri: String, data: RequestBody, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).patch(data).build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri, headers).patch(data).build(), JSONCallback(handler))
     }
 
     fun PATCH(uri: String, data: JSONObject, handler: JSONResponseHandler) {
@@ -122,11 +128,14 @@ open class JSON : HTTP {
     }
 
     fun PATCH(uri: String, data: Any, closure: (JSONObject) -> Unit) {
-        PATCH(uri, detectData(data), fromClosure(closure))
+        val body = detectData(data)
+        if (body != null) {
+            PATCH(uri, body, fromClosure(closure))
+        }
     }
 
     fun DELETE(uri: String, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).delete().build(), JSONCallback(handler, this))
+        sendRequest(makeRequest(uri, headers).delete().build(), JSONCallback(handler))
     }
 
     fun DELETE(uri: String, closure: (JSONObject) -> Unit) {
@@ -134,8 +143,8 @@ open class JSON : HTTP {
     }
 
     fun HTTP(method: String, uri: String, data: Any?, handler: JSONResponseHandler) {
-        val body = detectData(data, null)
-        sendRequest(makeRequest(uri, headers).method(method, body).build(), JSONCallback(handler, this))
+        val body = detectData(data)
+        sendRequest(makeRequest(uri, headers).method(method, body).build(), JSONCallback(handler))
     }
 
     fun HTTP(method: String, uri: String, data: Any?, closure: (JSONObject) -> Unit) {
@@ -156,10 +165,13 @@ open class JSON : HTTP {
         }
     }
 
+    fun errorMsg(): JSONObject {
+        return JSONObject(mapOf("success" to false))
+    }
+
     fun errorMsg(msgs: Array<String?>?): JSONObject {
-        val json = JSONObject()
+        val json = errorMsg()
         try {
-            json.put("success", false)
             val errors = JSONArray(msgs)
             json.put("errors", errors)
         } catch (e: JSONException) {
@@ -169,9 +181,8 @@ open class JSON : HTTP {
     }
 
     fun errorMsg(msgs: Collection<*>?): JSONObject {
-        val json = JSONObject()
+        val json = errorMsg()
         try {
-            json.put("success", false)
             val errors = JSONArray(msgs)
             json.put("errors", errors)
         } catch (e: JSONException) {
@@ -181,9 +192,8 @@ open class JSON : HTTP {
     }
 
     fun errorMsg(msg: String): JSONObject {
-        val json = JSONObject()
+        val json = errorMsg()
         try {
-            json.put("success", false)
             val errors = JSONArray()
             if (msg.isEmpty()) {
                 if (logLevel >= LOG_WARNINGS) Log.w(TAG, "Empty message passed to errorMsg")
@@ -198,6 +208,13 @@ open class JSON : HTTP {
         return json
     }
 
+    fun exceptionMsg(e: Exception, ident: String? = null): JSONObject {
+        val json = errorMsg(arrayOf("internal", "exception", ident))
+        val hash = JSONObject(hashException(e))
+        json.put("exception", hash)
+        return json
+    }
+
     fun jsonResponse(response: Response): JSONObject {
         return if (!response.isSuccessful) {
             errorMsg(arrayOf("internal", "http_status", response.code.toString()))
@@ -206,9 +223,9 @@ open class JSON : HTTP {
             if (logLevel >= LOG_DEBUG) Log.d(TAG, "Response body: $body")
             JSONObject(body)
         } catch (e: IOException) {
-            errorMsg(arrayOf("internal", "exception", "response_body_parsing", e.message))
+            exceptionMsg(e,"response_body_parsing")
         } catch (e: JSONException) {
-            errorMsg(arrayOf("internal", "exception", "json_parsing", e.message))
+            exceptionMsg(e, "json_parsing")
         }
     }
 
@@ -219,10 +236,13 @@ open class JSON : HTTP {
         val stack = e.stackTrace
         for (stackTraceElement in stack) {
             val stackItem = HashMap<String, Any>()
-            stackItem["class"] = stackTraceElement.className
-            stackItem["file"] = stackTraceElement.fileName
+            if (stackTraceElement.className != null)
+                stackItem["class"] = stackTraceElement.className
+            if (stackTraceElement.fileName != null)
+                stackItem["file"] = stackTraceElement.fileName
             stackItem["line"] = stackTraceElement.lineNumber
-            stackItem["method"] = stackTraceElement.methodName
+            if (stackTraceElement.methodName != null)
+                stackItem["method"] = stackTraceElement.methodName
             errList.add(stackItem)
         }
         errHash["stack"] = errList
