@@ -27,18 +27,6 @@ open class JSON : HTTP {
         fun handle(data: JSONObject)
     }
 
-    /* Use {runOnUiThread} instead of this bastardized mess.
-    abstract class JSONUIResponseHandler : JSONResponseHandler {
-        abstract fun setup(data: JSONObject): Runnable
-        open val uIHandler: Handler
-            get() = HTTP.uIHandler
-
-        override fun handle(data: JSONObject) {
-            uIHandler.post(setup(data))
-        }
-    }
-    */
-
     inner class JSONCallback internal constructor(private val handler: JSONResponseHandler) : Callback {
         override fun onFailure(call: Call, e: IOException) {
             handler.handle(errorMsg(arrayOf("internal", "http_failure", e.message)))

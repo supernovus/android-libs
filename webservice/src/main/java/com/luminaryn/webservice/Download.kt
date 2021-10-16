@@ -70,16 +70,4 @@ object Download {
         fun handleException(call: Call, response: Response, e: Exception) {}
     }
 
-    /* Like the others, use {runOnUiThread} instead of this.
-    abstract class FileUIResponseHandler : FileResponseHandler {
-        abstract fun setup(file: File): Runnable
-
-        val uIHandler: Handler
-            get() = HTTP.uIHandler
-
-        override fun handleDownload(file: File) {
-            uIHandler.post(setup(file))
-        }
-    }
-     */
 }
