@@ -1,6 +1,5 @@
 package com.luminaryn.webservice
 
-import android.os.Handler
 import android.util.Log
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,25 +21,51 @@ open class JSON : HTTP {
     protected constructor(builder: Builder) : super(builder)
 
     var defaultRequestBody: RequestBody? = null
+    var useAbsoluteUris: Boolean = false
 
     interface JSONResponseHandler {
         fun handle(data: JSONObject)
     }
 
-    inner class JSONCallback internal constructor(private val handler: JSONResponseHandler) : Callback {
+    inner class JSONCallback : Callback {
+
+        constructor(handler: JSONResponseHandler) {
+            this.handler = handler
+            this.closure = null
+        }
+
+        constructor(closure: JSONClosure) {
+            this.closure = closure
+            this.handler = null
+        }
+
+        private val handler: JSONResponseHandler?
+        private val closure: JSONClosure?
+
         override fun onFailure(call: Call, e: IOException) {
-            handler.handle(errorMsg(arrayOf("internal", "http_failure", e.message)))
+            val err = errorMsg(arrayOf("internal", "http_failure", e.message))
+            if (closure != null)
+                closure.invoke(err)
+            else if (handler != null)
+                handler.handle(err)
+            else {
+                if (logLevel >= LOG_ERRORS) {
+                    Log.e(TAG, "JSONCallback without closure or handler handled error: $err")
+                }
+            }
         }
 
         override fun onResponse(call: Call, response: Response) {
-            handler.handle(jsonResponse(response))
-        }
-    }
-
-    fun fromClosure (callback: JSONClosure): JSONResponseHandler {
-        return object : JSONResponseHandler {
-            override fun handle(data: JSONObject) {
-               callback(data)
+            val jsr = jsonResponse(response)
+            if (closure != null)
+                closure.invoke(jsr)
+            else if (handler != null)
+                handler.handle(jsr)
+            else
+            {
+                if (logLevel >= LOG_WARNINGS) {
+                    Log.w(TAG, "JSONCallback without closure or handler received response: $jsr")
+                }
             }
         }
     }
@@ -57,99 +82,118 @@ open class JSON : HTTP {
         return data.toString().toRequestBody(TYPE_JSON)
     }
 
+    fun GET(uri: String, absoluteUris: Boolean, callback: JSONCallback) {
+        sendRequest(makeRequest(uri, headers, absoluteUris).get().build(), callback)
+    }
+
     fun GET(uri: String, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).get().build(), JSONCallback(handler))
+        GET(uri, useAbsoluteUris, JSONCallback(handler))
     }
 
     fun GET(uri: String, closure: JSONClosure) {
-        GET(uri, fromClosure(closure))
+        GET(uri, useAbsoluteUris, JSONCallback(closure))
     }
 
-    fun POST(uri: String, data: RequestBody, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).post(data).build(), JSONCallback(handler))
+    fun POST(uri: String, data: RequestBody, absoluteUris: Boolean, callback: JSONCallback) {
+        sendRequest(makeRequest(uri, headers, absoluteUris).post(data).build(), callback)
     }
 
-    fun POST(uri: String, data: JSONObject, handler: JSONResponseHandler) {
-        POST(uri, jsonBody(data), handler)
-    }
-
-    fun POST(uri: String, data: JSONishMap, handler: JSONResponseHandler) {
-        POST(uri, JSONObject(data), handler)
+    fun POST(uri: String, data: Any, handler: JSONResponseHandler) {
+        val body = detectData(data)
+        if (body != null) {
+            POST(uri, body, useAbsoluteUris, JSONCallback(handler))
+        } else nullBodyErr()
     }
 
     fun POST(uri: String, data: Any, closure: JSONClosure) {
         val body = detectData(data)
         if (body != null) {
-            POST(uri, body, fromClosure(closure))
-        }
+            POST(uri, body, useAbsoluteUris, JSONCallback(closure))
+        } else nullBodyErr()
     }
 
-    fun PUT(uri: String, data: RequestBody, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).put(data).build(), JSONCallback(handler))
+    fun PUT(uri: String, data: RequestBody, absoluteUris: Boolean, callback: JSONCallback) {
+        sendRequest(makeRequest(uri, headers, absoluteUris).put(data).build(), callback)
     }
 
-    fun PUT(uri: String, data: JSONObject, handler: JSONResponseHandler) {
-        PUT(uri, jsonBody(data), handler)
-    }
-
-    fun PUT(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
-        PUT(uri, JSONObject(data), handler)
+    fun PUT(uri: String, data: Any, handler: JSONResponseHandler) {
+        val body = detectData(data)
+        if (body != null) {
+            PUT(uri, body, useAbsoluteUris, JSONCallback(handler))
+        } else nullBodyErr()
     }
 
     fun PUT(uri: String, data: Any, closure: (JSONObject) -> Unit) {
         val body = detectData(data)
         if (body != null) {
-            PUT(uri, body, fromClosure(closure))
-        }
+            PUT(uri, body, useAbsoluteUris, JSONCallback(closure))
+        } else nullBodyErr()
     }
 
-    fun PATCH(uri: String, data: RequestBody, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).patch(data).build(), JSONCallback(handler))
+    fun PATCH(uri: String, data: RequestBody, absoluteUris: Boolean, callback: JSONCallback) {
+        sendRequest(makeRequest(uri, headers, absoluteUris).patch(data).build(), callback)
     }
 
-    fun PATCH(uri: String, data: JSONObject, handler: JSONResponseHandler) {
-        PATCH(uri, jsonBody(data), handler)
-    }
-
-    fun PATCH(uri: String, data: Map<String?, Any?>, handler: JSONResponseHandler) {
-        PATCH(uri, JSONObject(data), handler)
+    fun PATCH(uri: String, data: Any, handler: JSONResponseHandler) {
+        val body = detectData(data)
+        if (body != null) {
+            PATCH(uri, body, useAbsoluteUris, JSONCallback(handler))
+        } else nullBodyErr()
     }
 
     fun PATCH(uri: String, data: Any, closure: (JSONObject) -> Unit) {
         val body = detectData(data)
         if (body != null) {
-            PATCH(uri, body, fromClosure(closure))
-        }
+            PATCH(uri, body, useAbsoluteUris, JSONCallback(closure))
+        } else nullBodyErr()
+    }
+
+    fun DELETE(uri: String, absoluteUris: Boolean, callback: JSONCallback) {
+        sendRequest(makeRequest(uri, headers, absoluteUris).delete().build(), callback)
     }
 
     fun DELETE(uri: String, handler: JSONResponseHandler) {
-        sendRequest(makeRequest(uri, headers).delete().build(), JSONCallback(handler))
+        DELETE(uri, useAbsoluteUris, JSONCallback(handler))
     }
 
     fun DELETE(uri: String, closure: (JSONObject) -> Unit) {
-        DELETE(uri, fromClosure(closure))
+        DELETE(uri, useAbsoluteUris, JSONCallback(closure))
+    }
+
+    fun HTTP(method: String, uri: String, data: Any?, absoluteUris: Boolean, callback: JSONCallback) {
+        val body = detectData(data)
+        sendRequest(makeRequest(uri, headers, absoluteUris).method(method, body).build(), callback)
     }
 
     fun HTTP(method: String, uri: String, data: Any?, handler: JSONResponseHandler) {
-        val body = detectData(data)
-        sendRequest(makeRequest(uri, headers).method(method, body).build(), JSONCallback(handler))
+        HTTP(method, uri, data, useAbsoluteUris, JSONCallback(handler))
     }
 
     fun HTTP(method: String, uri: String, data: Any?, closure: (JSONObject) -> Unit) {
-        HTTP(method, uri, data, fromClosure(closure))
+        HTTP(method, uri, data, useAbsoluteUris, JSONCallback(closure))
+    }
+
+    fun OPTIONS(uri: String, data: Any?, absoluteUris: Boolean, callback: JSONCallback) {
+        HTTP(OPTIONS, uri, data, absoluteUris, callback)
     }
 
     fun OPTIONS(uri: String, data: Any?, handler: JSONResponseHandler) {
-        HTTP("OPTIONS", uri, data, handler)
+        OPTIONS(uri, data, useAbsoluteUris, JSONCallback(handler))
     }
 
     fun OPTIONS(uri: String, data: Any?, closure: (JSONObject) -> Unit) {
-        OPTIONS(uri, data, fromClosure(closure))
+        OPTIONS(uri, data, useAbsoluteUris, JSONCallback(closure))
     }
 
     private fun jsonBuildErr(e: JSONException) {
         if (logLevel >= LOG_ERRORS) {
             Log.e(TAG, "JSON error when building error object: " + e.message)
+        }
+    }
+
+    private fun nullBodyErr() {
+        if (logLevel >= LOG_ERRORS) {
+            Log.e(TAG, "HTTP Body sent to webservice method was empty")
         }
     }
 
@@ -248,5 +292,6 @@ open class JSON : HTTP {
 
     companion object {
         val TYPE_JSON: MediaType = "application/json; charset=utf-8".toMediaType()
+        const val OPTIONS = "OPTIONS"
     }
 }

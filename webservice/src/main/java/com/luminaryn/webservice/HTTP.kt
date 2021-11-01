@@ -1,7 +1,5 @@
 package com.luminaryn.webservice
 
-import android.os.Handler
-import android.os.Looper
 import com.luminaryn.webservice.extensions.asRequestBody
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -69,15 +67,16 @@ abstract class HTTP {
     }
 
     /**
-     * Return an okhttp3.Request.Builder with a URL set.
-     * Will automatically prepend the baseURL.
+     * Return an {okhttp3.Request.Builder} with a URL set.
      *
-     * @param uri
-     * @return
+     * @param uri The URI we're requesting.
+     * @param headers Optional headers instance we want to add.
+     * @param absoluteUri If true, the URI is the full URL, otherwise we prepend the baseURL.
+     * @return The Builder object that can be further updated as needed.
      */
     @JvmOverloads
-    fun makeRequest(uri: String, headers: Headers? = null): Request.Builder {
-        val url = baseURL + uri
+    fun makeRequest(uri: String, headers: Headers? = null, absoluteUri: Boolean = false): Request.Builder {
+        val url = if (absoluteUri) uri else baseURL + uri
         val builder = Request.Builder().url(url)
         if (headers != null) {
             builder.headers(headers);
@@ -87,9 +86,15 @@ abstract class HTTP {
 
     /**
      * A wrapper for makeRequest that automatically builds a Headers.Builders object passed in.
+     *
+     * @param uri The URI we're requesting.
+     * @param headers The headers, but as a Headers.Builder instance that we'll build() first.
+     * @param absoluteUri If true, the URI is the full URL, otherwise we prepend the baseURL.
+     * @return The Builder object that can be further updated as needed.
      */
-    fun makeRequest(uri: String, headers: Headers.Builder): Request.Builder {
-        return makeRequest(uri, headers.build());
+    @JvmOverloads
+    fun makeRequest(uri: String, headers: Headers.Builder, absoluteUri: Boolean = false): Request.Builder {
+        return makeRequest(uri, headers.build(), absoluteUri);
     }
 
     /**
@@ -199,7 +204,7 @@ abstract class HTTP {
         const val LOG_DEBUG = 3
         val TYPE_DEFAULT_FILE: MediaType = "application/octet-stream".toMediaType()
         protected const val DEFAULT_TAG = "com.luminaryn.webservice"
-        protected const val DEFAULT_LOG_LEVEL = LOG_NONE
+        protected const val DEFAULT_LOG_LEVEL = LOG_ERRORS
 
         fun qsval (value: Any): String {
             if (value is String) return value
