@@ -3,19 +3,25 @@ package com.luminaryn.common
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.ArrayMap
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
-import java.lang.Error
-import java.lang.Exception
 
 /**
  * A simple wrapper around the SharedPreferences library.
  *
  * @param context The application context we get the SharedPreferences from.
  * @param preferenceName The name of the shared preference store to get from the context.
+ * @param separator The character that should be used to separate nested namespaces.
+ * @param prefix The current prefix including separator, you shouldn't have to ever use this directly.
  */
-open class Settings(protected val context: Context, protected val preferenceName: String) {
+open class Settings(protected val context: Context,
+                    protected val preferenceName: String,
+                    protected val separator: String = DEFAULT_SEP,
+                    protected val prefix: String = "",
+                    protected val nestedProp: String = NESTED_PROP
+) {
 
     var preferences: SharedPreferences? = null
         get() {
@@ -34,6 +40,8 @@ open class Settings(protected val context: Context, protected val preferenceName
             }
             return field
         }
+
+    protected val nestedNamespaces = ArrayMap<String, Settings>()
 
     /**
      * Cancel the current editing operation.
@@ -77,7 +85,7 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getBoolean(key: String, defValue: Boolean = false): Boolean {
         try {
-            return preferences!!.getBoolean(key, defValue)
+            return preferences!!.getBoolean(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -86,7 +94,7 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getFloat(key: String, defValue: Float = 0.0f): Float {
         try {
-            return preferences!!.getFloat(key, defValue)
+            return preferences!!.getFloat(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -95,7 +103,7 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getDouble(key: String, defValue: Double = 0.0): Double {
         try {
-            return Double.fromBits(preferences!!.getLong(key, defValue.toRawBits()))
+            return Double.fromBits(preferences!!.getLong(prefix+key, defValue.toRawBits()))
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -104,10 +112,10 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getInt(key: String, defValue: Int = 0): Int {
         try {
-            return preferences!!.getInt(key, defValue)
+            return preferences!!.getInt(prefix+key, defValue)
         } catch (e: ClassCastException) {
             try {
-                return preferences!!.getLong(key, defValue.toLong()).toInt()
+                return preferences!!.getLong(prefix+key, defValue.toLong()).toInt()
             } catch (e2: ClassCastException) {
                 return defValue
             }
@@ -117,10 +125,10 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getLong(key: String, defValue: Long = 0L): Long {
         try {
-            return preferences!!.getLong(key, defValue)
+            return preferences!!.getLong(prefix+key, defValue)
         } catch (e: ClassCastException) {
             try {
-                return preferences!!.getInt(key, defValue.toInt()).toLong()
+                return preferences!!.getInt(prefix+key, defValue.toInt()).toLong()
             } catch (e: ClassCastException) {
                 return defValue
             }
@@ -130,7 +138,7 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getString(key: String, defValue: String? = ""): String? {
         try {
-            return preferences!!.getString(key, defValue)
+            return preferences!!.getString(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -139,7 +147,7 @@ open class Settings(protected val context: Context, protected val preferenceName
     @JvmOverloads
     fun getStringSet(key: String, defValue: MutableSet<String>? = null): MutableSet<String>? {
         try {
-            return preferences!!.getStringSet(key, defValue)
+            return preferences!!.getStringSet(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -176,80 +184,90 @@ open class Settings(protected val context: Context, protected val preferenceName
     }
 
     /**
-     * Get a Nested object that can look for further settings inside it, or fall back
-     * to top-level properties in the main Settings object.
-     *
-     * This is a weird bastard system created for one of my projects migrating to a new nested
-     * configuration model from an older flat model, while preserving backwards compatibility.
+     * Get a nested Settings instance using a prefix.
      */
-    fun getNested(key: String): Nested {
-        return Nested(getJSONObject(key))
+    fun getNested(key: String): Settings {
+        if (nestedNamespaces.containsKey(key))
+            return nestedNamespaces[key]!!
+
+        val nested = Settings(context, preferenceName, separator, prefix+key+separator, nestedProp)
+        nested.preferences = preferences
+        nestedNamespaces[key] = nested
+        return nested
     }
 
     fun contains(key: String): Boolean {
-        return preferences!!.contains(key)
+        return preferences!!.contains(prefix+key)
     }
 
-    fun getAll(expandJSON: Boolean): Map<String, *> {
-        val prefMap = preferences!!.all;
-        if (expandJSON) {
-            val expMap = HashMap<String, Any?>()
-            for ((key, value) in prefMap) {
-                if (value is String) {
-                    if (value.startsWith('[') && value.endsWith(']')) {
-                        expMap[key] = JSONArray(value)
-                    }
-                    else if (value.startsWith('{') && value.endsWith('}')) {
-                        expMap[key] = JSONObject(value)
-                    }
-                    else { // Doesn't match a JSON value.
-                        expMap[key] = value
-                    }
-                } else { // Is not a string.
-                    expMap[key] = value
+    val allPreferences: Map<String, *> = preferences!!.all
+
+    @JvmOverloads
+    fun getAll(expandNested: Boolean = true, expandJSON: Boolean = true): Map<String, *> {
+        val expMap = HashMap<String, Any?>()
+        for ((skey, value) in allPreferences) {
+            val tkey: String
+            if (prefix.isNotEmpty()) { // We have a prefix, let's do this people!
+                if (!skey.startsWith(prefix)) continue // Key doesn't have what we need.
+                tkey = skey.removePrefix(prefix)
+            } else {
+                tkey = skey
+            }
+
+            if (expandNested && tkey.contains(separator)) {
+                val nsparts = tkey.split(separator, limit = 2)
+                val ns = nsparts[0]
+                if (!expMap.containsKey(ns)) {
+                    expMap[ns] = getNested(ns).getAll(expandNested, expandJSON)
                 }
-            } // for prefMap
-            return expMap
-        } else {
-            return prefMap
-        }
-    }
+            } else if (expandJSON && value is String) { // It's not a namespace.
+                if (value.startsWith('[') && value.endsWith(']')) {
+                    expMap[tkey] = JSONArray(value)
+                } else if (value.startsWith('{') && value.endsWith('}')) {
+                    expMap[tkey] = JSONObject(value)
+                } else { // Doesn't match a JSON value.
+                    expMap[tkey] = value
+                }
+            } else { // Is not a string, or we're not using expandJSON.
+                expMap[tkey] = value
+            }
 
-    val keys: Set<String>
-        get () = getAll(false).keys
+        } // for prefMap
+        return expMap
+    }
 
     fun putBoolean(key: String, value: Boolean): Settings {
-        editor?.putBoolean(key, value)
+        editor?.putBoolean(prefix+key, value)
         return this;
     }
 
     fun putFloat(key: String, value: Float): Settings {
-        editor?.putFloat(key, value)
+        editor?.putFloat(prefix+key, value)
         return this
     }
 
     fun putDouble(key: String, value: Double): Settings {
-        editor?.putLong(key, value.toRawBits())
+        editor?.putLong(prefix+key, value.toRawBits())
         return this
     }
 
     fun putInt(key: String, value: Int): Settings {
-        editor?.putInt(key, value);
+        editor?.putInt(prefix+key, value);
         return this
     }
 
     fun putLong(key: String, value: Long): Settings {
-        editor?.putLong(key, value)
+        editor?.putLong(prefix+key, value)
         return this
     }
 
     fun putString(key: String, value: String): Settings {
-        editor?.putString(key, value)
+        editor?.putString(prefix+key, value)
         return this
     }
 
     fun putStringSet(key: String, value: Set<String>): Settings {
-        editor?.putStringSet(key, value)
+        editor?.putStringSet(prefix+key, value)
         return this
     }
 
@@ -324,60 +342,82 @@ open class Settings(protected val context: Context, protected val preferenceName
      * This one using a JSONObject as the source.
      *
      * Like putAll(), this does not support StringSet.
+     *
+     * This does support setting nested namespaces using nested JSON objects.
+     * To tell it to do that instead of the fallback behaviour of serializing the JSON,
+     * add an extra property to the nested JSON object called "__nested" and set it to true.
+     *
+     * @param spec The JSON document that we're updating from.
      */
     fun updateFromJSON(spec: JSONObject): Boolean {
         val keys: Iterator<*> = spec.keys()
         var updated = false;
+
         while (keys.hasNext()) {
-            val key = keys.next() as String
+            var key = keys.next() as String
+            var box = this
+
+            if (key.contains(separator)) {
+                val subkeys = key.split(separator, limit = 2)
+                key = subkeys[1]
+                val ns = subkeys[0]
+                box = getNested(ns)
+            }
+
             when (val value = spec.get(key)) {
                 JSONObject.NULL -> {
                     if (contains(key)) {
-                        remove(key)
+                        box.remove(key)
                         updated = true;
                     }
                 }
                 is Boolean -> {
-                    if (getBoolean(key) != value) {
-                        putBoolean(key, value)
+                    if (box.getBoolean(key) != value) {
+                        box.putBoolean(key, value)
                         updated = true
                     }
                 }
                 is Float -> {
-                    if (this.getFloat(key) != value) {
-                        putFloat(key, value)
+                    if (box.getFloat(key) != value) {
+                        box.putFloat(key, value)
                         updated = true
                     }
                 }
                 is Double -> {
-                    if (this.getDouble(key) != value) {
-                        putDouble(key, value)
+                    if (box.getDouble(key) != value) {
+                        box.putDouble(key, value)
                         updated = true
                     }
                 }
                 is Int -> {
-                    if (getInt(key) != value) {
-                        putInt(key, value)
+                    if (box.getInt(key) != value) {
+                        box.putInt(key, value)
                         updated = true
                     }
                 }
                 is Long -> {
-                    if (getLong(key) != value) {
-                        putLong(key, value)
+                    if (box.getLong(key) != value) {
+                        box.putLong(key, value)
                         updated = true
                     }
                 }
                 is String -> {
-                    if (getString(key) != value) {
-                        putString(key, value)
+                    if (box.getString(key) != value) {
+                        box.putString(key, value)
                         updated = true
                     }
                 }
+
                 is JSONObject -> {
-                    val curJson = getJSONObject(key)
-                    if (curJson == null || !curJson.equals(value)) {
-                        putJSONObject(key, value)
-                        updated = true
+                    if (value.optBoolean(nestedProp)) {
+                        val nested = getNested(key)
+                        nested.updateFromJSON(value)
+                    } else {
+                        val curJson = getJSONObject(key)
+                        if (curJson == null || !curJson.equals(value)) {
+                            putJSONObject(key, value)
+                            updated = true
+                        }
                     }
                 }
                 is JSONArray -> {
@@ -387,6 +427,7 @@ open class Settings(protected val context: Context, protected val preferenceName
                         updated = true
                     }
                 }
+
                 else -> {
                     Log.v(TAG, "Unsupported JSON value: $value")
                 }
@@ -400,94 +441,10 @@ open class Settings(protected val context: Context, protected val preferenceName
         return this
     }
 
-    /**
-     * A read-only nested object that can look for a property in a JSONObject, or find a fallback
-     * property in the parent Settings object.
-     *
-     * Supports most of the same get functions as the parent, but not all of them.
-     */
-    inner class Nested(private val data: JSONObject?) {
-        @JvmOverloads
-        fun getBoolean(key: String, fbkey: String?, defValue: Boolean = false): Boolean {
-            return if (data != null && data.has(key)) data.optBoolean(key, defValue)
-            else getBoolean(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getFloat(key: String, fbkey: String?, defValue: Float = 0.0f): Float {
-            return if (data != null && data.has(key))  data.optDouble(key, defValue.toDouble()).toFloat()
-            else getFloat(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getDouble(key: String, fbkey: String?, defValue: Double = 0.0): Double {
-            return if (data != null && data.has(key)) data.optDouble(key, defValue)
-            else getDouble(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getInt(key: String, fbkey: String?, defValue: Int = 0): Int {
-            return if (data != null && data.has(key)) data.optInt(key, defValue)
-            else getInt(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getLong(key: String, fbkey: String?, defValue: Long = 0L): Long {
-            return if (data != null && data.has(key)) data.optLong(key, defValue)
-            else getLong(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getString(key: String, fbkey: String?, defValue: String? = ""): String? {
-            return if (data != null && data.has(key)) data.optString(key, defValue)
-            else this@Settings.getString(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getJSONObject(key: String, fbkey: String?, defValue: JSONObject? = null): JSONObject? {
-            return if (data != null && data.has(key)) data.optJSONObject(key)
-            else getJSONObject(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getJSONArray(key: String, fbkey: String?, defValue: JSONArray? = null): JSONArray? {
-            return if (data != null && data.has(key)) data.optJSONArray(key)
-            else getJSONArray(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getHashMap(key: String, fbkey: String?, defValue: HashMap<*,*>? = null): HashMap<*,*>? {
-            if (data != null && data.has(key)) {
-                val json = data.optJSONObject(key)
-                if (json != null) {
-                    return Json.toHashMap(json, true)
-                }
-            }
-
-            return getHashMap(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun getArrayList(key: String, fbkey: String?, defValue: ArrayList<*>? = null): ArrayList<*>? {
-            if (data != null && data.has(key)) {
-                val json = data.optJSONArray(key)
-                if (json != null) {
-                    return Json.toArrayList(json, true)
-                }
-            }
-
-            return getArrayList(fbkey ?: key, defValue)
-        }
-
-        @JvmOverloads
-        fun contains(key: String, fbkey: String? = null): Boolean {
-            return if (data != null && data.has(key)) true
-            else this@Settings.contains(fbkey ?: key)
-        }
-    }
-
     companion object {
         const val TAG = "com.luminaryn.common.Settings"
+        const val NESTED_PROP = "__nested"
+        const val DEFAULT_SEP = "."
     }
 
 }
