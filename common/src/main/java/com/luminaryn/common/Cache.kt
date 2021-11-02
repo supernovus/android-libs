@@ -3,6 +3,7 @@ package com.luminaryn.common
 import org.json.JSONArray
 import org.json.JSONObject
 
+@Deprecated("This class is horribly inefficient and will be removed in a future update")
 class Cache (val settings: Settings, val useKey: String?, val dataKey: String?) {
 
     val use: Boolean
