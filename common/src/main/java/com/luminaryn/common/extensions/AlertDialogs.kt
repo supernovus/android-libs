@@ -13,6 +13,14 @@ fun AlertDialog.Builder.setNegativeButton (listener: DialogInterface.OnClickList
     return setNegativeButton(AlertDialogs.NO, listener)
 }
 
+fun AlertDialog.Builder.useAlertIcon(): AlertDialog.Builder {
+    return setIcon(AlertDialogs.ALERT)
+}
+
+fun AlertDialog.Builder.useInfoIcon(): AlertDialog.Builder {
+    return setIcon(AlertDialogs.INFO)
+}
+
 object AlertDialogs {
     const val INFO = android.R.drawable.ic_dialog_info
     const val ALERT = android.R.drawable.ic_dialog_alert
