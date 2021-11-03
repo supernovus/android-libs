@@ -10,10 +10,14 @@ import android.net.Uri
 abstract class AppBase : Application() {
     val id: String
         get() = AppInfo.getAppId(this)
+
+    val versionInfo: AppInfo.VersionInfo
+        get() = AppInfo.getVersionInfo(this)
     val versionCode: Int
-        get() = AppInfo.getVersionCode(this)
-    val versionName: String?
-        get() = AppInfo.getVersionName(this)
+        get() = versionInfo.code
+    val versionName: String
+        get() = versionInfo.name
+
     val permissions: Array<String>
         get() = AppInfo.getPermissions(this)
 

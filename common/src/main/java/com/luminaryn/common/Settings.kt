@@ -236,6 +236,13 @@ open class Settings(protected val context: Context,
         return expMap
     }
 
+    /**
+     * Convert all the data from this Settings instance into a JSON object.
+     */
+    fun toJSON(): JSONObject {
+        return JSONObject(getAll())
+    }
+
     fun putBoolean(key: String, value: Boolean): Settings {
         editor?.putBoolean(prefix+key, value)
         return this;
