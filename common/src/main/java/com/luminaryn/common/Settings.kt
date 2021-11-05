@@ -16,34 +16,85 @@ import org.json.JSONObject
  * @param separator The character that should be used to separate nested namespaces.
  * @param prefix The current prefix including separator, you shouldn't have to ever use this directly.
  */
-class Settings(val context: Context,
-                    val preferenceName: String,
-                    val separator: String = DEFAULT_SEP,
-                    val prefix: String = "",
-                    val nestedProp: String = NESTED_PROP
+class Settings private constructor(
+    val context: Context,
+    val preferenceName: String,
+    val separator: String,
+    val prefix: String,
+    val nestedProp: String,
+    val preferences: SharedPreferences,
+    private var editorInstance: SharedPreferences.Editor?,
 ) {
 
-    constructor(prefix: String, parent: Settings) : this(parent.context, parent.preferenceName,
-        parent.separator, prefix, parent.nestedProp) {
-        this.preferences = parent.preferences
-        this.editor = parent.editor
-    }
+    private constructor(prefix: String, parent: Settings) : this(
+        parent.context,
+        parent.preferenceName,
+        parent.separator,
+        prefix,
+        parent.nestedProp,
+        parent.preferences,
+        parent.editorInstance,
+    )
 
-    var preferences: SharedPreferences? = null
-        get() {
-            if (field == null) {
-                field = context.getSharedPreferences(preferenceName, 0)
-            }
-            return field
+    private constructor(builder: Builder) : this(
+        builder.context,
+        builder.preferenceName,
+        builder.separator,
+        builder.prefix,
+        builder.nestedProp,
+        builder.preferences,
+        builder.editorInstance,
+    )
+
+    class Builder(val context: Context, val preferenceName: String) {
+        internal var separator: String = DEFAULT_SEP
+            private set
+        internal var prefix: String = ""
+            private set
+        internal var nestedProp: String = NESTED_PROP
+            private set
+        internal var editorInstance: SharedPreferences.Editor? = null
+            private set
+
+        fun setSeparator(separator: String): Builder {
+            this.separator = separator
+            return this
         }
 
-    var editor: SharedPreferences.Editor? = null
+        fun setPrefix(prefix: String): Builder {
+            this.prefix = prefix
+            return this
+        }
+
+        fun setNestedProp(nestedProp: String): Builder {
+            this.nestedProp = nestedProp
+            return this
+        }
+
+        fun setEditor(editor: SharedPreferences.Editor): Builder {
+            this.editorInstance = editor
+            return this
+        }
+
+        internal val preferences: SharedPreferences by lazy {
+            context.getSharedPreferences(preferenceName, 0)
+        }
+
+        fun build(): Settings {
+            return Settings(this)
+        }
+    }
+
+    val hasEditor: Boolean
+        get() = editorInstance != null
+
+    val editor: SharedPreferences.Editor
         @SuppressLint("CommitPrefEdits")
         get() {
-            if (field == null) {
-                field = preferences?.edit()
+            if (editorInstance == null) {
+                editorInstance = preferences.edit()
             }
-            return field
+            return editorInstance!!
         }
 
     protected val nestedNamespaces = ArrayMap<String, Settings>()
@@ -52,7 +103,7 @@ class Settings(val context: Context,
      * Cancel the current editing operation.
      */
     fun cancel() {
-        editor = null
+        editorInstance = null
     }
 
     /**
@@ -63,14 +114,14 @@ class Settings(val context: Context,
      */
     fun save(atomic: Boolean): Boolean {
         val editor = editor
-        return if (editor != null) {
+        return if (hasEditor) {
             if (atomic) {
                 val ret = editor.commit()
-                this.editor = null
+                cancel()
                 ret
             } else {
                 editor.apply()
-                this.editor = null
+                cancel()
                 true
             }
         } else {
@@ -369,73 +420,86 @@ class Settings(val context: Context,
         while (keys.hasNext()) {
             val key = keys.next() as String
 
-            //Log.v(TAG, "Updating $key")
+            Log.v(TAG, "Updating $key")
 
             when (val value = spec.get(key)) {
-                JSONObject.NULL -> {
-                    if (contains(key)) {
-                        remove(key)
-                        updated = true;
-                    }
+                JSONObject.NULL, null -> {
+                    Log.v(TAG, "is NULL")
+                    remove(key)
+                    updated = true;
                 }
                 is Boolean -> {
+                    Log.v(TAG,"is Boolean")
                     if (!contains(key) || getBoolean(key) != value) {
+                        Log.v(TAG,"changed")
                         putBoolean(key, value)
                         updated = true
                     }
                 }
                 is Float -> {
+                    Log.v(TAG,"is Float")
                     if (!contains(key) || getFloat(key) != value) {
+                        Log.v(TAG,"changed")
                         putFloat(key, value)
                         updated = true
                     }
                 }
                 is Double -> {
+                    Log.v(TAG,"is Double")
                     if (!contains(key) || getDouble(key) != value) {
+                        Log.v(TAG,"changed")
                         putDouble(key, value)
                         updated = true
                     }
                 }
                 is Int -> {
+                    Log.v(TAG,"is Int")
                     if (!contains(key) || getInt(key) != value) {
+                        Log.v(TAG,"changed")
                         putInt(key, value)
                         updated = true
                     }
                 }
                 is Long -> {
+                    Log.v(TAG,"is Long")
                     if (!contains(key) || getLong(key) != value) {
+                        Log.v(TAG,"changed")
                         putLong(key, value)
                         updated = true
                     }
                 }
                 is String -> {
+                    Log.v(TAG,"is String")
                     if (!contains(key) || getString(key) != value) {
+                        Log.v(TAG,"changed")
                         putString(key, value)
                         updated = true
                     }
                 }
 
                 is JSONObject -> {
-                    //Log.v(TAG,"-- Is JSONObject")
+                    Log.v(TAG,"-- Is JSONObject")
                     if (value.optBoolean(nestedProp)) {
-                        //Log.v(TAG,"-- Is a Nested namespace")
+                        Log.v(TAG,"-- Is a Nested namespace")
                         val nested = getNested(key)
                         if (nested.updateFromJSON(value)) {
                             updated = true
                         }
                     } else {
-                        //Log.v(TAG, "-- Is embedded JSON")
+                        Log.v(TAG, "-- Is embedded JSON")
                         val curJson = getJSONObject(key)
                         if (curJson == null || !curJson.equals(value)) {
+                            Log.v(TAG,"changed")
                             putJSONObject(key, value)
                             updated = true
                         }
                     }
                 }
                 is JSONArray -> {
-                    //Log.v(TAG, "-- Is JSONArray")
+                    Log.v(TAG, "-- Is JSONArray")
                     val curJson = getJSONArray(key)
                     if (curJson == null || !curJson.equals(value)) {
+                        Log.v(TAG,"changed")
                         putJSONArray(key, value)
                         updated = true
                     }
