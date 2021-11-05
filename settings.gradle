@@ -1,7 +1,8 @@
+rootProject.name = "Common"
+
 include ':interop'
 include ':updater'
 include ':webservice'
 include ':common'
-rootProject.name = "Common"
 include ':fragadapters'
 include ':viewhelpers'
