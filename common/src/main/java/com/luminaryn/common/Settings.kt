@@ -114,8 +114,9 @@ class Settings private constructor(
      * If using apply() we return true. If there is no active editor we return false.
      */
     fun save(commit: Boolean): Boolean {
-        val editor = editor
+        debug("save($commit)")
         return if (hasEditor) {
+            val editor = editor
             if (commit) {
                 val ret = editor.commit()
                 cancel()
@@ -126,6 +127,7 @@ class Settings private constructor(
                 true
             }
         } else {
+            debug("¿ no editor active ?")
             false
         }
     }
