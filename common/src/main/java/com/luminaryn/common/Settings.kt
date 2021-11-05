@@ -10,11 +10,6 @@ import org.json.JSONObject
 
 /**
  * A simple wrapper around the SharedPreferences library.
- *
- * @param context The application context we get the SharedPreferences from.
- * @param preferenceName The name of the shared preference store to get from the context.
- * @param separator The character that should be used to separate nested namespaces.
- * @param prefix The current prefix including separator, you shouldn't have to ever use this directly.
  */
 class Settings private constructor(
     val context: Context,
@@ -46,6 +41,12 @@ class Settings private constructor(
         builder.editorInstance,
     )
 
+    /**
+     * The builder for Settings.
+     *
+     * @param context The application context we get the SharedPreferences from.
+     * @param preferenceName The name of the shared preference store to get from the context.
+     */
     class Builder(val context: Context, val preferenceName: String) {
         internal var separator: String = DEFAULT_SEP
             private set
@@ -109,13 +110,13 @@ class Settings private constructor(
     /**
      * Save any changes.
      *
-     * @param atomic If true, we use commit() and return the result from it. If false we use apply()
+     * @param commit If true, we use commit() and return the result from it. If false we use apply()
      * If using apply() we return true. If there is no active editor we return false.
      */
-    fun save(atomic: Boolean): Boolean {
+    fun save(commit: Boolean): Boolean {
         val editor = editor
         return if (hasEditor) {
-            if (atomic) {
+            if (commit) {
                 val ret = editor.commit()
                 cancel()
                 ret
@@ -141,7 +142,7 @@ class Settings private constructor(
     @JvmOverloads
     fun getBoolean(key: String, defValue: Boolean = false): Boolean {
         try {
-            return preferences!!.getBoolean(prefix+key, defValue)
+            return preferences.getBoolean(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -150,7 +151,7 @@ class Settings private constructor(
     @JvmOverloads
     fun getFloat(key: String, defValue: Float = 0.0f): Float {
         try {
-            return preferences!!.getFloat(prefix+key, defValue)
+            return preferences.getFloat(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -159,7 +160,7 @@ class Settings private constructor(
     @JvmOverloads
     fun getDouble(key: String, defValue: Double = 0.0): Double {
         try {
-            return Double.fromBits(preferences!!.getLong(prefix+key, defValue.toRawBits()))
+            return Double.fromBits(preferences.getLong(prefix+key, defValue.toRawBits()))
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -168,10 +169,10 @@ class Settings private constructor(
     @JvmOverloads
     fun getInt(key: String, defValue: Int = 0): Int {
         try {
-            return preferences!!.getInt(prefix+key, defValue)
+            return preferences.getInt(prefix+key, defValue)
         } catch (e: ClassCastException) {
             try {
-                return preferences!!.getLong(prefix+key, defValue.toLong()).toInt()
+                return preferences.getLong(prefix+key, defValue.toLong()).toInt()
             } catch (e2: ClassCastException) {
                 return defValue
             }
@@ -181,10 +182,10 @@ class Settings private constructor(
     @JvmOverloads
     fun getLong(key: String, defValue: Long = 0L): Long {
         try {
-            return preferences!!.getLong(prefix+key, defValue)
+            return preferences.getLong(prefix+key, defValue)
         } catch (e: ClassCastException) {
             try {
-                return preferences!!.getInt(prefix+key, defValue.toInt()).toLong()
+                return preferences.getInt(prefix+key, defValue.toInt()).toLong()
             } catch (e: ClassCastException) {
                 return defValue
             }
@@ -194,7 +195,7 @@ class Settings private constructor(
     @JvmOverloads
     fun getString(key: String, defValue: String? = ""): String? {
         try {
-            return preferences!!.getString(prefix+key, defValue)
+            return preferences.getString(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -203,7 +204,7 @@ class Settings private constructor(
     @JvmOverloads
     fun getStringSet(key: String, defValue: MutableSet<String>? = null): MutableSet<String>? {
         try {
-            return preferences!!.getStringSet(prefix+key, defValue)
+            return preferences.getStringSet(prefix+key, defValue)
         } catch (e: ClassCastException) {
             return defValue
         }
@@ -252,14 +253,19 @@ class Settings private constructor(
     }
 
     fun contains(key: String): Boolean {
-        return preferences!!.contains(prefix+key)
+        return preferences.contains(prefix+key)
     }
 
-    val allPreferences: Map<String, *> = preferences!!.all
+    val allPreferences: Map<String, *> = preferences.all
+
+    private fun debug (msg: String) {
+        val ns = if (prefix.isEmpty())  "-" else prefix
+        Log.v(TAG, "[$ns] $msg")
+    }
 
     @JvmOverloads
     fun getAll(expandNested: Boolean = true, expandJSON: Boolean = true): Map<String, *> {
-        Log.v(TAG, "getAll[ns=$prefix]")
+        debug("getAll($expandNested, $expandJSON)")
         val expMap = HashMap<String, Any?>()
         for ((skey, value) in allPreferences) {
             val tkey: String
@@ -300,37 +306,37 @@ class Settings private constructor(
     }
 
     fun putBoolean(key: String, value: Boolean): Settings {
-        editor?.putBoolean(prefix+key, value)
+        editor.putBoolean(prefix+key, value)
         return this;
     }
 
     fun putFloat(key: String, value: Float): Settings {
-        editor?.putFloat(prefix+key, value)
+        editor.putFloat(prefix+key, value)
         return this
     }
 
     fun putDouble(key: String, value: Double): Settings {
-        editor?.putLong(prefix+key, value.toRawBits())
+        editor.putLong(prefix+key, value.toRawBits())
         return this
     }
 
     fun putInt(key: String, value: Int): Settings {
-        editor?.putInt(prefix+key, value);
+        editor.putInt(prefix+key, value);
         return this
     }
 
     fun putLong(key: String, value: Long): Settings {
-        editor?.putLong(prefix+key, value)
+        editor.putLong(prefix+key, value)
         return this
     }
 
     fun putString(key: String, value: String): Settings {
-        editor?.putString(prefix+key, value)
+        editor.putString(prefix+key, value)
         return this
     }
 
     fun putStringSet(key: String, value: Set<String>): Settings {
-        editor?.putStringSet(prefix+key, value)
+        editor.putStringSet(prefix+key, value)
         return this
     }
 
@@ -393,7 +399,7 @@ class Settings private constructor(
                     putJSONArray(key, value)
                 }
                 else -> {
-                    Log.v(TAG,"Unsupported data value: $value")
+                    debug("Unsupported data value: $value")
                 }
             }
         }
@@ -413,100 +419,100 @@ class Settings private constructor(
      * @param spec The JSON document that we're updating from.
      */
     fun updateFromJSON(spec: JSONObject): Boolean {
-        Log.v(TAG, "updateFromJSON[ns=$prefix]")
+        debug("updateFromJSON(${spec.length()})")
         val keys: Iterator<*> = spec.keys()
         var updated = false;
 
         while (keys.hasNext()) {
             val key = keys.next() as String
 
-            Log.v(TAG, "Updating $key")
+            debug("«$key»")
 
             when (val value = spec.get(key)) {
                 JSONObject.NULL, null -> {
-                    Log.v(TAG, "is NULL")
+                    debug("-- is NULL")
                     remove(key)
                     updated = true;
                 }
                 is Boolean -> {
-                    Log.v(TAG,"is Boolean")
+                    debug("-- is Boolean")
                     if (!contains(key) || getBoolean(key) != value) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putBoolean(key, value)
                         updated = true
                     }
                 }
                 is Float -> {
-                    Log.v(TAG,"is Float")
+                    debug("-- is Float")
                     if (!contains(key) || getFloat(key) != value) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putFloat(key, value)
                         updated = true
                     }
                 }
                 is Double -> {
-                    Log.v(TAG,"is Double")
+                    debug("-- is Double")
                     if (!contains(key) || getDouble(key) != value) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putDouble(key, value)
                         updated = true
                     }
                 }
                 is Int -> {
-                    Log.v(TAG,"is Int")
+                    debug("-- is Int")
                     if (!contains(key) || getInt(key) != value) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putInt(key, value)
                         updated = true
                     }
                 }
                 is Long -> {
-                    Log.v(TAG,"is Long")
+                    debug("-- is Long")
                     if (!contains(key) || getLong(key) != value) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putLong(key, value)
                         updated = true
                     }
                 }
                 is String -> {
-                    Log.v(TAG,"is String")
+                    debug("-- is String")
                     if (!contains(key) || getString(key) != value) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putString(key, value)
                         updated = true
                     }
                 }
 
                 is JSONObject -> {
-                    Log.v(TAG,"-- Is JSONObject")
+                    debug("-- Is JSONObject")
                     if (value.optBoolean(nestedProp)) {
-                        Log.v(TAG,"-- Is a Nested namespace")
+                        debug("-- Is a Nested namespace")
                         val nested = getNested(key)
                         if (nested.updateFromJSON(value)) {
                             updated = true
                         }
                     } else {
-                        Log.v(TAG, "-- Is embedded JSON")
+                        debug("-- Is embedded JSON")
                         val curJson = getJSONObject(key)
                         if (curJson == null || !curJson.equals(value)) {
-                            Log.v(TAG,"changed")
+                            debug("=> $value")
                             putJSONObject(key, value)
                             updated = true
                         }
                     }
                 }
                 is JSONArray -> {
-                    Log.v(TAG, "-- Is JSONArray")
+                    debug( "-- Is JSONArray")
                     val curJson = getJSONArray(key)
                     if (curJson == null || !curJson.equals(value)) {
-                        Log.v(TAG,"changed")
+                        debug("=> $value")
                         putJSONArray(key, value)
                         updated = true
                     }
                 }
 
                 else -> {
-                    Log.v(TAG, "Unsupported JSON value: $value")
+                    debug( "Unsupported JSON value: $value")
                 }
             }
         }
@@ -514,7 +520,7 @@ class Settings private constructor(
     }
 
     fun remove(key: String): Settings {
-        editor?.remove(key);
+        editor.remove(key);
         return this
     }
 
