@@ -16,12 +16,18 @@ import org.json.JSONObject
  * @param separator The character that should be used to separate nested namespaces.
  * @param prefix The current prefix including separator, you shouldn't have to ever use this directly.
  */
-open class Settings(protected val context: Context,
-                    protected val preferenceName: String,
-                    protected val separator: String = DEFAULT_SEP,
-                    protected val prefix: String = "",
-                    protected val nestedProp: String = NESTED_PROP
+class Settings(val context: Context,
+                    val preferenceName: String,
+                    val separator: String = DEFAULT_SEP,
+                    val prefix: String = "",
+                    val nestedProp: String = NESTED_PROP
 ) {
+
+    constructor(prefix: String, parent: Settings) : this(parent.context, parent.preferenceName,
+        parent.separator, prefix, parent.nestedProp) {
+        this.preferences = parent.preferences
+        this.editor = parent.editor
+    }
 
     var preferences: SharedPreferences? = null
         get() {
@@ -30,9 +36,8 @@ open class Settings(protected val context: Context,
             }
             return field
         }
-        private set
 
-    protected var editor: SharedPreferences.Editor? = null
+    var editor: SharedPreferences.Editor? = null
         @SuppressLint("CommitPrefEdits")
         get() {
             if (field == null) {
@@ -190,8 +195,7 @@ open class Settings(protected val context: Context,
         if (nestedNamespaces.containsKey(key))
             return nestedNamespaces[key]!!
 
-        val nested = Settings(context, preferenceName, separator, prefix+key+separator, nestedProp)
-        nested.preferences = preferences
+        val nested = Settings(prefix+key+separator, this)
         nestedNamespaces[key] = nested
         return nested
     }
@@ -204,6 +208,7 @@ open class Settings(protected val context: Context,
 
     @JvmOverloads
     fun getAll(expandNested: Boolean = true, expandJSON: Boolean = true): Map<String, *> {
+        Log.v(TAG, "getAll[ns=$prefix]")
         val expMap = HashMap<String, Any?>()
         for ((skey, value) in allPreferences) {
             val tkey: String
@@ -352,74 +357,74 @@ open class Settings(protected val context: Context,
      *
      * This does support setting nested namespaces using nested JSON objects.
      * To tell it to do that instead of the fallback behaviour of serializing the JSON,
-     * add an extra property to the nested JSON object called "__nested" and set it to true.
+     * add an extra property to the nested JSON object called "__" and set it to true.
      *
      * @param spec The JSON document that we're updating from.
      */
     fun updateFromJSON(spec: JSONObject): Boolean {
+        Log.v(TAG, "updateFromJSON[ns=$prefix]")
         val keys: Iterator<*> = spec.keys()
         var updated = false;
 
         while (keys.hasNext()) {
-            var key = keys.next() as String
-            var box = this
+            val key = keys.next() as String
 
-            if (key.contains(separator)) {
-                val subkeys = key.split(separator, limit = 2)
-                key = subkeys[1]
-                val ns = subkeys[0]
-                box = getNested(ns)
-            }
+            //Log.v(TAG, "Updating $key")
 
             when (val value = spec.get(key)) {
                 JSONObject.NULL -> {
                     if (contains(key)) {
-                        box.remove(key)
+                        remove(key)
                         updated = true;
                     }
                 }
                 is Boolean -> {
-                    if (box.getBoolean(key) != value) {
-                        box.putBoolean(key, value)
+                    if (!contains(key) || getBoolean(key) != value) {
+                        putBoolean(key, value)
                         updated = true
                     }
                 }
                 is Float -> {
-                    if (box.getFloat(key) != value) {
-                        box.putFloat(key, value)
+                    if (!contains(key) || getFloat(key) != value) {
+                        putFloat(key, value)
                         updated = true
                     }
                 }
                 is Double -> {
-                    if (box.getDouble(key) != value) {
-                        box.putDouble(key, value)
+                    if (!contains(key) || getDouble(key) != value) {
+                        putDouble(key, value)
                         updated = true
                     }
                 }
                 is Int -> {
-                    if (box.getInt(key) != value) {
-                        box.putInt(key, value)
+                    if (!contains(key) || getInt(key) != value) {
+                        putInt(key, value)
                         updated = true
                     }
                 }
                 is Long -> {
-                    if (box.getLong(key) != value) {
-                        box.putLong(key, value)
+                    if (!contains(key) || getLong(key) != value) {
+                        putLong(key, value)
                         updated = true
                     }
                 }
                 is String -> {
-                    if (box.getString(key) != value) {
-                        box.putString(key, value)
+                    if (!contains(key) || getString(key) != value) {
+                        putString(key, value)
                         updated = true
                     }
                 }
 
                 is JSONObject -> {
+                    //Log.v(TAG,"-- Is JSONObject")
                     if (value.optBoolean(nestedProp)) {
+                        //Log.v(TAG,"-- Is a Nested namespace")
                         val nested = getNested(key)
-                        nested.updateFromJSON(value)
+                        if (nested.updateFromJSON(value)) {
+                            updated = true
+                        }
                     } else {
+                        //Log.v(TAG, "-- Is embedded JSON")
                         val curJson = getJSONObject(key)
                         if (curJson == null || !curJson.equals(value)) {
                             putJSONObject(key, value)
@@ -428,6 +433,7 @@ open class Settings(protected val context: Context,
                     }
                 }
                 is JSONArray -> {
+                    //Log.v(TAG, "-- Is JSONArray")
                     val curJson = getJSONArray(key)
                     if (curJson == null || !curJson.equals(value)) {
                         putJSONArray(key, value)
@@ -448,9 +454,27 @@ open class Settings(protected val context: Context,
         return this
     }
 
+    fun removeAll(keys: List<String>): Settings {
+        for (key in keys) {
+            remove(key)
+        }
+        return this
+    }
+
+    fun removeAll(keys: Array<String>): Settings {
+        for (key in keys) {
+            remove(key)
+        }
+        return this
+    }
+
+    fun removeAll() {
+        removeAll(allPreferences.keys.toList())
+    }
+
     companion object {
         const val TAG = "com.luminaryn.common.Settings"
-        const val NESTED_PROP = "__nested"
+        const val NESTED_PROP = "__"
         const val DEFAULT_SEP = "."
     }
 

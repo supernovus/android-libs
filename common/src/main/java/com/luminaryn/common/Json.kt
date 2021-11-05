@@ -1,5 +1,6 @@
 package com.luminaryn.common
 
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.NumberFormatException
@@ -139,6 +140,19 @@ object Json {
             }
         }
         return arrayList
+    }
+
+    fun <T> toArrayListOf(jsonArray: JSONArray): ArrayList<T> {
+        val list = ArrayList<T>()
+        for (i in 0 until jsonArray.length()) {
+            try {
+                val item = jsonArray.get(i) as T
+                list.add(item)
+            } catch (e: Exception) {
+                Log.v("LumJson", "Exception thrown while converting array", e)
+            }
+        }
+        return list
     }
 
     fun toHashMap (jsonObject: JSONObject, recursive: Boolean): HashMap<String, Any> {
