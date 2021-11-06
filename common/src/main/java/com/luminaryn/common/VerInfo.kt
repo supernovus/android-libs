@@ -1,5 +1,7 @@
 package com.luminaryn.common
 
+import com.luminaryn.common.extensions.substr
+
 object VerInfo {
 
     fun String.trim0() : String {
@@ -32,14 +34,14 @@ object VerInfo {
 
         when {
             vl >= 7 -> { // Major version over 0
-                ma = verCode.substring(0, vl-6)
-                mi = verCode.substring(vl-6, 3).trim0()
-                pa = verCode.substring(vl-3, 3).trim0()
+                ma = verCode.substr(0, vl-6)
+                mi = verCode.substr(vl-6, 3).trim0()
+                pa = verCode.substr(vl-3, 3).trim0()
             }
             vl >= 4 -> { // Major version 0, Minor version over 0
                 ma = "0"
-                mi = verCode.substring(0, vl-3)
-                pa = verCode.substring(vl-3, 3).trim0()
+                mi = verCode.substr(0, vl-3)
+                pa = verCode.substr(vl-3, 3).trim0()
             }
             else -> { // Both major and minor 0.
                 ma = "0"
