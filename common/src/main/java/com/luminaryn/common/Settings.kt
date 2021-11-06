@@ -16,7 +16,6 @@ class Settings private constructor(
     private val prefix: String,
     private val separator: String,
     private val nestedProp: String,
-    private var editorInstance: SharedPreferences.Editor?,
 ) {
 
     private constructor(prefix: String, parent: Settings) : this(
@@ -24,16 +23,18 @@ class Settings private constructor(
         prefix,
         parent.separator,
         parent.nestedProp,
-        parent.editorInstance,
-    )
+    ) {
+        debug("*nested(editor=$hasEditor)")
+    }
 
     private constructor(builder: Builder) : this(
         builder.preferences,
         builder.prefix,
         builder.separator,
         builder.nestedProp,
-        builder.editorInstance,
-    )
+    ) {
+        debug("*build(editor=$hasEditor)")
+    }
 
     /**
      * The builder for Settings.
@@ -47,8 +48,6 @@ class Settings private constructor(
         internal var prefix: String = ""
             private set
         internal var nestedProp: String = NESTED_PROP
-            private set
-        internal var editorInstance: SharedPreferences.Editor? = null
             private set
         internal var mode: Int = 0
             private set
@@ -65,11 +64,6 @@ class Settings private constructor(
 
         fun setNestedProp(nestedProp: String): Builder {
             this.nestedProp = nestedProp
-            return this
-        }
-
-        fun setEditor(editor: SharedPreferences.Editor): Builder {
-            this.editorInstance = editor
             return this
         }
 
@@ -422,11 +416,17 @@ class Settings private constructor(
      * add an extra property to the nested JSON object called "__" and set it to true.
      *
      * @param spec The JSON document that we're updating from.
+     *
      */
     fun updateFromJSON(spec: JSONObject): Boolean {
-        debug("updateFromJSON(${spec.length()})")
+        val size = spec.length()
+        if (size == 0) return false
+
+        debug("updateFromJSON(${size})")
         val keys: Iterator<*> = spec.keys()
         var updated = false;
+
+        if (!hasEditor) editor // Sanity check to ensure there's an editor before any nested stuff.
 
         while (keys.hasNext()) {
             val key = keys.next() as String
@@ -521,6 +521,7 @@ class Settings private constructor(
                 }
             }
         }
+
         return updated
     }
 
@@ -551,6 +552,8 @@ class Settings private constructor(
         const val TAG = "com.luminaryn.common.Settings"
         const val NESTED_PROP = "__"
         const val DEFAULT_SEP = "."
+
+        private var editorInstance: SharedPreferences.Editor? = null
     }
 
 }
