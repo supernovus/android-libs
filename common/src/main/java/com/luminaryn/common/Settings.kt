@@ -12,32 +12,26 @@ import org.json.JSONObject
  * A simple wrapper around the SharedPreferences library.
  */
 class Settings private constructor(
-    val context: Context,
-    val preferenceName: String,
-    val separator: String,
-    val prefix: String,
-    val nestedProp: String,
     val preferences: SharedPreferences,
+    private val prefix: String,
+    private val separator: String,
+    private val nestedProp: String,
     private var editorInstance: SharedPreferences.Editor?,
 ) {
 
     private constructor(prefix: String, parent: Settings) : this(
-        parent.context,
-        parent.preferenceName,
-        parent.separator,
-        prefix,
-        parent.nestedProp,
         parent.preferences,
+        prefix,
+        parent.separator,
+        parent.nestedProp,
         parent.editorInstance,
     )
 
     private constructor(builder: Builder) : this(
-        builder.context,
-        builder.preferenceName,
-        builder.separator,
-        builder.prefix,
-        builder.nestedProp,
         builder.preferences,
+        builder.prefix,
+        builder.separator,
+        builder.nestedProp,
         builder.editorInstance,
     )
 
@@ -55,6 +49,8 @@ class Settings private constructor(
         internal var nestedProp: String = NESTED_PROP
             private set
         internal var editorInstance: SharedPreferences.Editor? = null
+            private set
+        internal var mode: Int = 0
             private set
 
         fun setSeparator(separator: String): Builder {
@@ -77,8 +73,13 @@ class Settings private constructor(
             return this
         }
 
+        fun setMode(mode: Int): Builder {
+            this.mode = mode
+            return this
+        }
+
         internal val preferences: SharedPreferences by lazy {
-            context.getSharedPreferences(preferenceName, 0)
+            context.getSharedPreferences(preferenceName, mode)
         }
 
         fun build(): Settings {
@@ -93,6 +94,7 @@ class Settings private constructor(
         @SuppressLint("CommitPrefEdits")
         get() {
             if (editorInstance == null) {
+                debug("Building new Editor")
                 editorInstance = preferences.edit()
             }
             return editorInstance!!
@@ -258,7 +260,8 @@ class Settings private constructor(
         return preferences.contains(prefix+key)
     }
 
-    val allPreferences: Map<String, *> = preferences.all
+    val allPreferences: Map<String, *>
+        get() = preferences.all
 
     private fun debug (msg: String) {
         val ns = if (prefix.isEmpty())  "-" else prefix
