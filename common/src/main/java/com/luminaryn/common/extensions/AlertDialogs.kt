@@ -1,24 +1,61 @@
 package com.luminaryn.common.extensions
 
-import android.app.AlertDialog
+import android.app.AlertDialog.Builder as AAB
+import androidx.appcompat.app.AlertDialog.Builder as AXB
 import android.content.DialogInterface
 
 @JvmOverloads
-fun AlertDialog.Builder.setPositiveButton (listener: DialogInterface.OnClickListener? = null): AlertDialog.Builder {
+fun AAB.setPositiveButton (listener: DialogInterface.OnClickListener? = null): AAB {
     return setPositiveButton(AlertDialogs.YES, listener)
 }
 
 @JvmOverloads
-fun AlertDialog.Builder.setNegativeButton (listener: DialogInterface.OnClickListener? = null): AlertDialog.Builder {
+fun AAB.setNegativeButton (listener: DialogInterface.OnClickListener? = null): AAB {
     return setNegativeButton(AlertDialogs.NO, listener)
 }
 
-fun AlertDialog.Builder.useAlertIcon(): AlertDialog.Builder {
+fun AAB.useAlertIcon(): AAB {
     return setIcon(AlertDialogs.ALERT)
 }
 
-fun AlertDialog.Builder.useInfoIcon(): AlertDialog.Builder {
+fun AAB.useInfoIcon(): AAB {
     return setIcon(AlertDialogs.INFO)
+}
+
+fun AAB.confirm (title: Int, message: Int, onYes: ((DialogInterface, Int)->Unit)) {
+    setTitle(title)
+    setMessage(message)
+    useAlertIcon()
+    setPositiveButton(onYes)
+    setNegativeButton()
+    show()
+}
+
+@JvmOverloads
+fun AXB.setPositiveButton (listener: DialogInterface.OnClickListener? = null): AXB {
+    return setPositiveButton(AlertDialogs.YES, listener)
+}
+
+@JvmOverloads
+fun AXB.setNegativeButton (listener: DialogInterface.OnClickListener? = null): AXB {
+    return setNegativeButton(AlertDialogs.NO, listener)
+}
+
+fun AXB.useAlertIcon(): AXB {
+    return setIcon(AlertDialogs.ALERT)
+}
+
+fun AXB.useInfoIcon(): AXB {
+    return setIcon(AlertDialogs.INFO)
+}
+
+fun AXB.confirm (title: Int, message: Int, onYes: ((DialogInterface, Int)->Unit)) {
+    setTitle(title)
+    setMessage(message)
+    useAlertIcon()
+    setPositiveButton(onYes)
+    setNegativeButton()
+    show()
 }
 
 object AlertDialogs {

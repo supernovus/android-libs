@@ -1,12 +1,11 @@
 package com.luminaryn.webservice
 
-import com.luminaryn.webservice.extensions.asRequestBody
+import com.luminaryn.webservice.extensions.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.InputStream
+import java.io.*
 
 /**
  * Simple wrapper for OkHttp.
@@ -122,6 +121,22 @@ abstract class HTTP {
 
     fun formBody(fileFormName: String, file: File, contentType: String): MultipartBody.Builder {
         return formBody(fileFormName, file, contentType.toMediaType())
+    }
+
+    @JvmOverloads
+    fun formBodyFromChunk(fileFormName: String, file: File, chunkSize: Long, wantPart: Long,
+                          contentType: MediaType = TYPE_DEFAULT_FILE,
+                          extFormat: String = "%03d"): MultipartBody.Builder {
+        val ext = extFormat.format(wantPart)
+        val fileName = "${file.name}.$ext"
+        return formBody().addFormDataPart(fileFormName, fileName, file.getRequestBodyChunk(chunkSize, wantPart, contentType))
+    }
+
+    @JvmOverloads
+    fun formBodyFromChunk(fileFormName: String, file: File, fileName: String,
+                          chunkSize: Long, wantPart: Long,
+                          contentType: MediaType = TYPE_DEFAULT_FILE): MultipartBody.Builder {
+        return formBody().addFormDataPart(fileFormName, fileName, file.getRequestBodyChunk(chunkSize, wantPart, contentType))
     }
 
     @JvmOverloads

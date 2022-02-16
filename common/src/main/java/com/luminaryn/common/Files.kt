@@ -115,6 +115,55 @@ object Files {
     }
 
     /**
+     * Get a segment of a file without generating an intermediate file.
+     */
+    fun getSegment(srcFile: File, chunkSize: Long, wantPart: Int, startAt1: Boolean = false): ByteArrayOutputStream?
+    {
+        if (!srcFile.exists()) return null
+        if (srcFile.isDirectory) return null
+
+        val srcStream = BufferedInputStream(FileInputStream(srcFile))
+        val chunks = getChunks(srcFile, chunkSize)
+
+        val partIndex = if (startAt1 && wantPart > 0) wantPart-1 else wantPart
+
+        if (partIndex >= chunks) return null
+
+        val baStream = ByteArrayOutputStream()
+        val boStream = BufferedOutputStream(baStream)
+
+        srcStream.skip(partIndex*chunkSize)
+
+        for (currentByte in 0 until chunkSize) {
+            val byte = srcStream.read()
+            if (byte == -1) break
+            boStream.write(byte)
+        }
+
+        boStream.close()
+        return baStream
+    }
+
+    @JvmOverloads
+    fun getChunks(totalSize: Long, chunkSize: Long, addPartial: Boolean = true): Long {
+        if (chunkSize == 0L || totalSize == 0L) // No dividing by zero thanks.
+            return if (addPartial) 1 else 0     // 1 part min if including partial chunks.
+        var chunks = totalSize / chunkSize
+        if (totalSize != chunkSize * chunks)
+            chunks++
+        return chunks
+    }
+
+    fun getChunks(file: File, chunkSize: Long, addPartial: Boolean = true): Long {
+        if (file.isDirectory || !file.exists()) return -1 // Not valid, cannot continue.
+        return getChunks(file.length(), chunkSize, addPartial)
+    }
+
+    fun getChunks(path: String, chunkSize: Long, addPartial: Boolean = true): Long {
+        return getChunks(File(path), chunkSize, addPartial)
+    }
+
+    /**
      * Convert KiB to bytes.
      */
     fun KB (kb: Long): Long {

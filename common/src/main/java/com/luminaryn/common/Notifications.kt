@@ -12,6 +12,7 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.ChecksSdkIntAtLeast
 import java.lang.Error
 
 /**
@@ -495,6 +496,7 @@ open class Notifications(private val context: Context, private val broadcastClas
 
     companion object {
 
+        @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
         val OVER_O = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
 
         const val MIN = "min"
@@ -503,7 +505,7 @@ open class Notifications(private val context: Context, private val broadcastClas
         const val HIGH = "high"
         const val MAX = "max"
 
-        @SuppressLint("InlinedApi")
+        //@SuppressLint("InlinedApi")
         val IMPORTANCE_NAMES = hashMapOf<String,Int>(
                 MIN to if (OVER_O) NotificationManager.IMPORTANCE_MIN else 0,
                 LOW to if (OVER_O) NotificationManager.IMPORTANCE_LOW else 0,

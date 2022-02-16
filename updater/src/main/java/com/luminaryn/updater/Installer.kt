@@ -118,7 +118,7 @@ open class Installer (protected var context: Context,
 
     companion object {
         const val USE_PM     = 1 // Use pm.PackageInstaller instead of ACTION_INSTALL_PACKAGE
-        const val TRY_SILENT = 2 // Enable silent installation if available (Android 12+ only).
+        const val TRY_SILENT = 2 // Enable silent installation if available.
 
         const val DEFAULT_PKG_STREAM_NAME = "LUM_INSTALLER"
         const val DEFAULT_COMPLETE_INTENT = "com.luminaryn.installer.ACTION_INSTALL_COMPLETE"

@@ -2,6 +2,9 @@ package com.luminaryn.common
 
 import android.util.Base64
 
+/**
+ * TODO: support V3 Data extension with at least JSON and possibly UBJSON serialization.
+ */
 object Safe64 {
     /**
      * Convert a Base64 string into a Safe64 string.
@@ -22,7 +25,7 @@ object Safe64 {
      * @param useTildes
      * @return
      */
-    fun urlize(text: String, useTildes: Boolean): String {
+    fun urlize(text: String, useTildes: Boolean = false): String {
         var text = text
         text = text
                 .replace('+', '-')

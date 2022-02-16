@@ -261,7 +261,7 @@ open class JSON : HTTP {
         }
     }
 
-    fun hashException(e: Exception): HashMap<String, Any?> {
+    fun hashException(e: Throwable): HashMap<String, Any?> {
         val errHash = HashMap<String, Any?>()
         errHash["message"] = e.message
         val errList = ArrayList<HashMap<String, Any>>()

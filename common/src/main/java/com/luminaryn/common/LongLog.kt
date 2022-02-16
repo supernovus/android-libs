@@ -67,6 +67,11 @@ object LongLog {
     }
 
     @JvmStatic
+    fun v(tag: String?, msg: String?, e: Throwable): Int {
+        return Log.v(tag, msg, e)
+    }
+
+    @JvmStatic
     fun d(tag: String?, msg: String): Int {
         return log(DEBUG, tag, msg)
     }
@@ -84,5 +89,10 @@ object LongLog {
     @JvmStatic
     fun e(tag: String?, msg: String): Int {
         return log(ERROR, tag, msg)
+    }
+
+    @JvmStatic
+    fun e(tag: String?, msg: String?, e: Throwable): Int {
+        return Log.e(tag, msg, e)
     }
 }
