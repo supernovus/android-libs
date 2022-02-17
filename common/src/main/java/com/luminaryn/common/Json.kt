@@ -190,4 +190,28 @@ object Json {
         return hashMap
     }
 
+    /**
+     * A version of put() that will auto-wrap Map, Collection, and null.
+     */
+    fun JSONObject.putAny(key: String, value: Any?) {
+        when (value) {
+            null -> put(key, JSONObject.NULL)
+            is Map<*,*> -> put(key, JSONObject(value))
+            is Collection<*> -> put(key, JSONArray(value))
+            else -> put(key, value)
+        }
+    }
+
+    /**
+     * A version of put() that will auto-wrap Map, Collection, and null.
+     */
+    fun JSONArray.putAny(value: Any?) {
+        when (value) {
+            null -> put(JSONObject.NULL)
+            is Map<*, *> -> put(JSONObject(value))
+            is Collection<*> -> put(JSONArray(value))
+            else -> put(value)
+        }
+    }
+
 }
