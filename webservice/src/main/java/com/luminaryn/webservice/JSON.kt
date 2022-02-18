@@ -16,12 +16,24 @@ import java.util.*
  * Can be used standalone, or (preferably) use a sub-class to add your method calls.
  */
 open class JSON : HTTP {
-    constructor() : super()
-    constructor(url: String) : super(url)
-    protected constructor(builder: Builder) : super(builder)
 
-    var defaultRequestBody: RequestBody? = null
-    var useAbsoluteUris: Boolean = false
+    constructor() : super() {
+        defaultRequestBody = null
+        useAbsoluteUris = false
+    }
+
+    constructor(url: String, absoluteUris: Boolean = false, defaultBody: RequestBody? = null) : super(url) {
+        defaultRequestBody = defaultBody
+        useAbsoluteUris = absoluteUris
+    }
+
+    protected constructor(builder: Builder) : super(builder) {
+        useAbsoluteUris = builder.useAbsoluteUris
+        defaultRequestBody = builder.defaultRequestBody
+    }
+
+    private val defaultRequestBody: RequestBody?
+    private val useAbsoluteUris: Boolean
 
     interface JSONResponseHandler {
         fun handle(data: JSONObject)
@@ -284,6 +296,19 @@ open class JSON : HTTP {
     class Builder : HTTP.Builder<Builder>() {
         override val `this`: Builder
             get() = this
+
+        var useAbsoluteUris: Boolean = false
+        var defaultRequestBody: RequestBody? = null
+
+        fun setAbsoluteUris(value: Boolean): Builder {
+            useAbsoluteUris = value
+            return this
+        }
+
+        fun setDefaultRequestBody(body: RequestBody): Builder {
+            defaultRequestBody = body
+            return this
+        }
 
         fun build(): JSON {
             return JSON(this)
