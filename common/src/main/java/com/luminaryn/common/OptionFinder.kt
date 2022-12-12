@@ -1,5 +1,6 @@
 package com.luminaryn.common
 
+import com.luminaryn.common.Json.optFloat
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -88,7 +89,7 @@ class OptionFinder (
     {
         if (options != null) { // We have options
             if (options.has(key)) { // Explicitly named property found.
-                return Json.optFloat(options, key, default)
+                return options.optFloat(key, default)
             } else if (nested) { // Look for a nested property.
                 val nval = Json.findPath(options, key, default, null)
                 if (nval is Float) { // A valid boolean value was found.

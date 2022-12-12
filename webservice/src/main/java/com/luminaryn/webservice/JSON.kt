@@ -275,6 +275,7 @@ open class JSON : HTTP {
 
     fun hashException(e: Throwable): HashMap<String, Any?> {
         val errHash = HashMap<String, Any?>()
+        errHash["class"] = e.javaClass.canonicalName
         errHash["message"] = e.message
         val errList = ArrayList<HashMap<String, Any>>()
         val stack = e.stackTrace

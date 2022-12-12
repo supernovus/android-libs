@@ -8,15 +8,15 @@ import java.lang.NumberFormatException
 object Json {
 
     @JvmOverloads
-    fun optFloat (opts: JSONObject, name: String, default: Float = 0.0f): Float
+    fun JSONObject.optFloat (name: String, default: Float = 0.0f): Float
     {
-        return opts.optDouble(name, default.toDouble()).toFloat()
+        return optDouble(name, default.toDouble()).toFloat()
     }
 
     @JvmOverloads
-    fun optFloat (opts: JSONArray, index: Int, default: Float = 0.0f): Float
+    fun JSONArray.optFloat (index: Int, default: Float = 0.0f): Float
     {
-        return opts.optDouble(index, default.toDouble()).toFloat()
+        return optDouble(index, default.toDouble()).toFloat()
     }
 
     fun getOpt (opts: JSONObject?, name: String, default: Any?) : Any? {
@@ -30,7 +30,7 @@ object Json {
         if (default is Long) return opts.optLong(name, default)
         if (default is Int) return opts.optInt(name, default)
         if (default is Double) return opts.optDouble(name, default)
-        if (default is Float) return optFloat(opts, name, default)
+        if (default is Float) return opts.optFloat(name, default)
         if (default is String) return opts.optString(name, default)
         if (default is JSONObject) return opts.optJSONObject(name) ?: default
         if (default is JSONArray) return opts.optJSONArray(name) ?: default
@@ -47,6 +47,8 @@ object Json {
         throw Exception("Invalid type in Json.getOpt")
     }
 
+    fun JSONObject.opt(name: String, default: Any?): Any? = getOpt(this, name, default)
+
     fun getOpt (opts: JSONArray?, index: Int, default: Any?) : Any? {
         if (opts == null) return default
 
@@ -58,7 +60,7 @@ object Json {
         if (default is Long) return opts.optLong(index, default)
         if (default is Int) return opts.optInt(index, default)
         if (default is Double) return opts.optDouble(index, default)
-        if (default is Float) return optFloat(opts, index, default)
+        if (default is Float) return opts.optFloat(index, default)
         if (default is String) return opts.optString(index, default)
         if (default is JSONObject) return opts.optJSONObject(index) ?: default
         if (default is JSONArray) return opts.optJSONArray(index) ?: default
@@ -75,6 +77,8 @@ object Json {
         throw Exception("Invalid type in Json.getOpt")
     }
 
+    fun JSONArray.opt(index: Int, default: Any?): Any? = getOpt(this, index, default)
+
     fun splitPath (path: String) : List<String> {
         return path.split('.','/')
     }
@@ -84,6 +88,10 @@ object Json {
         if (opts == null) return default
         return findPath(opts, splitPath(path), default, missing)
     }
+
+    @JvmOverloads
+    fun JSONArray.find(path: String, default: Any?, missing: Any? = default): Any?
+    = findPath(this, path, default, missing)
 
     @JvmOverloads
     fun findPath (opts: JSONObject?, path: List<*>, default: Any?, missing: Any? = default) : Any? {
@@ -106,10 +114,18 @@ object Json {
     }
 
     @JvmOverloads
+    fun JSONObject.find(path: List<*>, default: Any?, missing: Any? = default): Any?
+    = findPath(this, path, default, missing)
+
+    @JvmOverloads
     fun findPath (opts: JSONObject?, path: String, default: Any?, missing: Any? = default) : Any? {
         if (opts == null) return default
         return findPath(opts, splitPath(path), default, missing)
     }
+
+    @JvmOverloads
+    fun JSONObject.find(path: String, default: Any?, missing: Any? = default): Any?
+    = findPath(this, path, default, missing)
 
     @JvmOverloads
     fun findPath (opts: JSONArray?, path: List<*>, default: Any?, missing: Any? = default) : Any? {
@@ -143,6 +159,10 @@ object Json {
         }
     }
 
+    @JvmOverloads
+    fun JSONArray.find(path: List<*>, default: Any?, missing: Any? = default): Any?
+    = findPath(this, path, default, missing)
+
     fun toArrayList (jsonArray: JSONArray, recursive: Boolean): ArrayList<Any> {
         val arrayList = ArrayList<Any>()
         for (i in 0 until jsonArray.length()) {
@@ -160,6 +180,8 @@ object Json {
         return arrayList
     }
 
+    fun JSONArray.asArrayList(recursive: Boolean): ArrayList<Any> = toArrayList(this, recursive)
+
     fun <T> toArrayListOf(jsonArray: JSONArray): ArrayList<T> {
         val list = ArrayList<T>()
         for (i in 0 until jsonArray.length()) {
@@ -172,6 +194,8 @@ object Json {
         }
         return list
     }
+
+    fun <T>JSONArray.asArrayListOf(): ArrayList<T> = toArrayListOf(this)
 
     fun toHashMap (jsonObject: JSONObject, recursive: Boolean): HashMap<String, Any> {
         val hashMap = HashMap<String, Any>()
@@ -189,6 +213,8 @@ object Json {
         }
         return hashMap
     }
+
+    fun JSONObject.asHashMap(recursive: Boolean): HashMap<String, Any> = toHashMap(this, recursive)
 
     /**
      * A version of put() that will auto-wrap Map, Collection, and null.
