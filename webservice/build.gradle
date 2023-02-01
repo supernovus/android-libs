@@ -2,6 +2,6 @@ apply from: common_library
 
 dependencies {
     implementation project(':common')
-    implementation 'org.conscrypt:conscrypt-android:2.4.0'
-    api 'com.squareup.okhttp3:okhttp:4.7.2'
+    implementation 'org.conscrypt:conscrypt-android:2.5.2'
+    api 'com.squareup.okhttp3:okhttp:4.10.0'
 }
