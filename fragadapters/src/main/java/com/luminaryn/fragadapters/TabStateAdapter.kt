@@ -1,5 +1,6 @@
 package com.luminaryn.fragadapters
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
@@ -29,10 +30,19 @@ abstract class TabStateAdapter (activity: AppCompatActivity, val tabs: TabLayout
         mediator.attach()
     }
 
-    fun addTab(title: String, notify: Boolean, manager: TabPane.Manager, initializer: (TabPane) -> Fragment): TabPane {
+    fun addTab(title: String,
+               notify: Boolean,
+               manager: TabPane.Manager,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
 
         val tabPane = TabPane(this, title, manager, initializer)
-        panes.add(tabPane)
+
+        if (at != null) {
+            panes.add(at, tabPane)
+        } else {
+            panes.add(tabPane)
+        }
 
         if (notify) {
             notifyItemInserted(tabPane.position)
@@ -41,23 +51,87 @@ abstract class TabStateAdapter (activity: AppCompatActivity, val tabs: TabLayout
         return tabPane
     }
 
-    fun addTab(strId: Int, notify: Boolean, manager: TabPane.Manager, initializer: (TabPane) -> Fragment): TabPane {
+    fun addTab(strId: Int,
+               notify: Boolean,
+               manager: TabPane.Manager,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(getString(strId), notify, manager, at, initializer)
+    }
+
+    fun addTab(title: String,
+               notify: Boolean,
+               manager: TabPane.Manager,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(title, notify, manager, null, initializer)
+    }
+
+    fun addTab(strId: Int,
+               notify: Boolean,
+               manager: TabPane.Manager,
+               initializer: (TabPane) -> Fragment): TabPane {
         return addTab(getString(strId), notify, manager, initializer)
     }
 
-    fun addTab(title: String, manager: TabPane.Manager, initializer: (TabPane) -> Fragment): TabPane {
+    fun addTab(title: String,
+               manager: TabPane.Manager,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(title, notifyOnAdd, manager, at, initializer)
+    }
+
+    fun addTab(strId: Int,
+               manager: TabPane.Manager,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(strId, notifyOnAdd, manager, at, initializer)
+    }
+
+    fun addTab(title: String,
+               manager: TabPane.Manager,
+               initializer: (TabPane) -> Fragment): TabPane {
         return addTab(title, notifyOnAdd, manager, initializer)
     }
 
-    fun addTab(strId: Int, manager: TabPane.Manager, initializer: (TabPane) -> Fragment): TabPane {
+    fun addTab(strId: Int,
+               manager: TabPane.Manager,
+               initializer: (TabPane) -> Fragment): TabPane {
         return addTab(strId, notifyOnAdd, manager, initializer)
     }
 
-    fun addTab(title: String, initializer: (TabPane) -> Fragment): TabPane {
+    fun addTab(title: String,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(title, notifyOnAdd, defaultManager, at, initializer)
+    }
+
+    fun addTab(strId: Int,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(strId, notifyOnAdd, defaultManager, at, initializer)
+    }
+
+    fun addTab(title: String,
+               notify: Boolean,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(title, notify, defaultManager, at, initializer)
+    }
+
+    fun addTab(strId: Int,
+               notify: Boolean,
+               at: Int?,
+               initializer: (TabPane) -> Fragment): TabPane {
+        return addTab(strId, notify, defaultManager, at, initializer)
+    }
+
+    fun addTab(title: String,
+               initializer: (TabPane) -> Fragment): TabPane {
         return addTab(title, notifyOnAdd, defaultManager, initializer)
     }
 
-    fun addTab(strId: Int, initializer: (TabPane) -> Fragment): TabPane {
+    fun addTab(strId: Int,
+               initializer: (TabPane) -> Fragment): TabPane {
         return addTab(strId, notifyOnAdd, defaultManager, initializer)
     }
 
@@ -72,9 +146,10 @@ abstract class TabStateAdapter (activity: AppCompatActivity, val tabs: TabLayout
 
     @JvmOverloads
     fun removeTab(tabPane: TabPane, notify: Boolean = notifyOnRemove) {
-        removeTab(tabPane.position)
+        removeTab(tabPane.position, notify)
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     @JvmOverloads
     fun clear(notify: Boolean = notifyOnClear) {
         panes.clear()
