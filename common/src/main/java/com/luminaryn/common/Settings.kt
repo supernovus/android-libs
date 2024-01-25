@@ -16,24 +16,17 @@ class Settings private constructor(
     private val prefix: String,
     private val separator: String,
     private val nestedProp: String,
-) {
+    private val parent: Settings? = null,
+) : SharedPreferences.OnSharedPreferenceChangeListener {
 
     private constructor(prefix: String, parent: Settings) : this(
         parent.preferences,
         prefix,
         parent.separator,
         parent.nestedProp,
+        parent
     ) {
         debug("*nested(editor=$hasEditor)")
-    }
-
-    private constructor(builder: Builder) : this(
-        builder.preferences,
-        builder.prefix,
-        builder.separator,
-        builder.nestedProp,
-    ) {
-        debug("*build(editor=$hasEditor)")
     }
 
     /**
@@ -42,42 +35,26 @@ class Settings private constructor(
      * @param context The application context we get the SharedPreferences from.
      * @param preferenceName The name of the shared preference store to get from the context.
      */
-    class Builder(val context: Context, val preferenceName: String) {
-        internal var separator: String = DEFAULT_SEP
-            private set
-        internal var prefix: String = ""
-            private set
-        internal var nestedProp: String = NESTED_PROP
-            private set
-        internal var mode: Int = 0
-            private set
+    class Builder(
+        val context: Context,
+        val preferenceName: String,
+        var separator: String = DEFAULT_SEP,
+        var prefix: String = "",
+        var nestedProp: String = NESTED_PROP,
+        var mode: Int = 0,
+    ) {
 
-        fun setSeparator(separator: String): Builder {
-            this.separator = separator
-            return this
-        }
+        fun setSeparator(separator: String) = apply { this.separator = separator }
+        fun setPrefix(prefix: String) = apply { this.prefix = prefix }
+        fun setNestedProp(nestedProp: String) = apply { this.nestedProp = nestedProp }
+        fun setMode(mode: Int) = apply { this.mode = mode }
 
-        fun setPrefix(prefix: String): Builder {
-            this.prefix = prefix
-            return this
-        }
-
-        fun setNestedProp(nestedProp: String): Builder {
-            this.nestedProp = nestedProp
-            return this
-        }
-
-        fun setMode(mode: Int): Builder {
-            this.mode = mode
-            return this
-        }
-
-        internal val preferences: SharedPreferences by lazy {
+        private val preferences: SharedPreferences by lazy {
             context.getSharedPreferences(preferenceName, mode)
         }
 
         fun build(): Settings {
-            return Settings(this)
+            return Settings(this.preferences, this.prefix, this.separator, this.nestedProp)
         }
     }
 
@@ -94,7 +71,17 @@ class Settings private constructor(
             return editorInstance!!
         }
 
-    protected val nestedNamespaces = ArrayMap<String, Settings>()
+    private val nestedNamespaces = ArrayMap<String, Settings>()
+
+    private val observers = ArrayList<Observer>()
+
+    fun observe(observer: Observer) {
+        observers.add(observer)
+    }
+
+    fun stopObserving(observer: Observer) {
+        observers.remove(observer)
+    }
 
     /**
      * Cancel the current editing operation.
@@ -547,6 +534,26 @@ class Settings private constructor(
     fun removeAll() {
         removeAll(allPreferences.keys.toList())
     }
+
+    override fun onSharedPreferenceChanged(prefs: SharedPreferences, key: String?) {
+        val id = key?.removePrefix(prefix) ?: ""
+        val observation = Observation(key ?: "", prefix, id, prefs, this)
+        for (observer in observers) {
+            observer.observe(observation)
+        }
+    }
+
+    interface Observer {
+        fun observe(observation: Observation)
+    }
+
+    data class Observation(
+        val key: String,
+        val prefix: String,
+        val id: String,
+        val preferences: SharedPreferences,
+        val settings: Settings,
+    )
 
     companion object {
         const val TAG = "com.luminaryn.common.Settings"
