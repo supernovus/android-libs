@@ -1,6 +1,5 @@
 package com.luminaryn.webservice
 
-import android.os.Handler
 import android.util.Log
 import okhttp3.Call
 import okhttp3.Callback
@@ -40,7 +39,7 @@ object Download {
         }
 
         override fun onFailure(call: Call, e: IOException) {
-            Log.e(ws.TAG, "Failure downloading file: " + e.message)
+            Log.e(ws.logTag, "Failure downloading file: " + e.message)
             handler?.handleConnectionFailure(call, e)
         }
 
@@ -56,7 +55,7 @@ object Download {
                 sink.close()
                 handler?.handleDownload(targetFile)
             } catch (e: Exception) {
-                Log.v(ws.TAG, "Exception occurred trying to save downloaded file: " + e.message)
+                Log.v(ws.logTag, "Exception occurred trying to save downloaded file: " + e.message)
                 handler?.handleException(call, response, e)
             }
         }

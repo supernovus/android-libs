@@ -83,11 +83,7 @@ object AppInfo {
      * @return An array of permission strings.
      */
     fun getPermissions(context: Context): Array<String> {
-        return try {
-            context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions
-        } catch (e: PackageManager.NameNotFoundException) {
-            throw RuntimeException("This should have never happened", e)
-        }
+        return context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions!!
     }
 
     /**

@@ -26,7 +26,7 @@ open class Updater : Installer {
     /**
      * The logging tag for error messages.
      */
-    override var TAG: String = "com.luminaryn.updater"
+    override var logTag: String = "com.luminaryn.updater.Updater"
 
     /**
      * The ACTION name for the BroadcastReceiver intent.
@@ -171,14 +171,14 @@ open class Updater : Installer {
         } else {
             versionFromContext
         }
-        if (builder.TAG != null) {
-            TAG = builder.TAG!!
+        if (builder.logTag != null) {
+            logTag = builder.logTag!!
         }
         if (builder.ACTION != null) {
             ACTION = builder.ACTION
         }
         else {
-            ACTION = "$TAG.ACTION_GET_UPDATE"
+            ACTION = "$logTag.ACTION_GET_UPDATE"
         }
         if (builder.PROVIDER != null) {
             provider = builder.PROVIDER
@@ -188,7 +188,7 @@ open class Updater : Installer {
         }
         else
         {
-            EXTRAPREFIX = TAG
+            EXTRAPREFIX = logTag
         }
         if (builder.URLEXTRA != null) {
             URLEXTRA = builder.URLEXTRA
@@ -215,7 +215,7 @@ open class Updater : Installer {
             notificationChannelId = builder.notificationChannelId
         }
         else {
-            notificationChannelId = "$TAG.CHANNEL"
+            notificationChannelId = "$logTag.CHANNEL"
         }
         if (builder.notificationChannelPrio != Builder.UNSPECIFIED) {
             notificationChannelPrio = builder.notificationChannelPrio
@@ -321,7 +321,7 @@ open class Updater : Installer {
             // Ensure the channel exists.
             if (notifications.getNotificationChannel(notificationChannelId) == null) {
                 if (notificationChannelName == 0) {
-                    e(TAG, "No channel name string id specified, cannot continue.")
+                    e(logTag, "No channel name string id specified, cannot continue.")
                     return
                 }
                 val name = context.getString(notificationChannelName)
@@ -335,12 +335,12 @@ open class Updater : Installer {
         }
         val title = context.getString(notificationTitle)
         val message = context.getString(notificationMessage, currentVersionName, newestVersionName)
-        d(TAG, "Notification title: $title")
-        d(TAG, "Notification message: $message")
-        d(TAG, "Newest URL: $newestUrl")
+        d(logTag, "Notification title: $title")
+        d(logTag, "Notification message: $message")
+        d(logTag, "Newest URL: $newestUrl")
         val bundle = Bundle()
         bundle.putString(URL(), newestUrl)
-        d(TAG, "Extras Bundle: $bundle")
+        d(logTag, "Extras Bundle: $bundle")
         val intent = notifications.createBroadcast(ACTION!!, bundle)
         val not = notifications.createNotification(
             notificationChannelId,
@@ -408,7 +408,7 @@ open class Updater : Installer {
      * @param e The Exception that was thrown.
      */
     fun logError(logMsg: String, e: Exception) {
-        e(TAG, logMsg + ": " + e.message)
+        e(logTag, logMsg + ": " + e.message)
     }
 
     /**
@@ -419,7 +419,7 @@ open class Updater : Installer {
      * @param logMsg The error message.
      */
     fun logError(logMsg: String?) {
-        e(TAG, logMsg!!)
+        e(logTag, logMsg!!)
     }
 
     /**
@@ -430,7 +430,7 @@ open class Updater : Installer {
      * @param e The Exception that was thrown.
      */
     fun logError(e: Exception) {
-        e(TAG, e.message!!)
+        e(logTag, e.message!!)
     }
 
     /**
@@ -451,9 +451,9 @@ open class Updater : Installer {
      * @param intent The intent passed to the onReceive() method.
      */
     fun downloadIntent(intent: Intent): Boolean {
-        d(TAG, "downloadIntent()")
+        d(logTag, "downloadIntent()")
         val bundle = intent.extras
-        d(TAG, "Extras Bundle: " + (bundle?.toString() ?: "null"))
+        d(logTag, "Extras Bundle: " + (bundle?.toString() ?: "null"))
         if (bundle != null) {
             val url = bundle.getString(URL())
             if (url != null) {
@@ -488,7 +488,7 @@ open class Updater : Installer {
         var broadcastClass: Class<*>,
         var currentVersionCode: Int = 0,
         var currentVersionName: String? = null,
-        var TAG: String? = null,
+        var logTag: String? = null,
         var ACTION: String? = null,
         var PROVIDER: String? = null,
         var EXTRAPREFIX: String? = null,
@@ -515,7 +515,7 @@ open class Updater : Installer {
         var completeIntent: String? = null,
     ) {
         fun tag(tag: String?) = apply {
-            TAG = tag
+            logTag = tag
         }
 
         fun action(action: String?) = apply {

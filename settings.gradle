@@ -1,4 +1,4 @@
-rootProject.name = "Common"
+rootProject.name = "LumDroid"
 
 include ':interop'
 include ':updater'

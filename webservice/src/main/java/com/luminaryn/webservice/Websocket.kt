@@ -12,6 +12,8 @@ import org.json.JSONObject
  */
 class Websocket private constructor(builder: Builder) : HTTP(builder) {
 
+    override var logTag: String = "com.luminaryn.webservice.Websocket"
+
     private val onOpen: ((WebSocket, Response) -> Unit)? = builder.onOpen
     private val onClosing: ((WebSocket, code: Int, reason: String) -> Unit)? = builder.onClosing
     private val onClosed: ((WebSocket, code: Int, reason: String) -> Unit)? = builder.onClosed

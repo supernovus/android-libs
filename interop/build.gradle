@@ -1,5 +1,9 @@
 apply from: common_library
 
+android {
+    namespace = "com.luminaryn.interop"
+}
+
 dependencies {
     implementation project(':common')
     implementation project(':webservice')

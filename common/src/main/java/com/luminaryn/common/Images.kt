@@ -38,8 +38,7 @@ object Images {
     fun saveImage(context: Context, bitmap: Bitmap,
                   format: CompressFormat, mimeType: String,
                   quality: Int, filename: String) {
-        val fos: OutputStream?
-        fos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val fos: OutputStream? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val resolver = context.contentResolver
             val contentValues = ContentValues()
             contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
@@ -52,8 +51,12 @@ object Images {
             val image = File(imagesDir, filename)
             FileOutputStream(image)
         }
-        bitmap.compress(format, quality, fos)
-        Objects.requireNonNull(fos)?.close()
+
+        if (fos != null)
+        {
+            bitmap.compress(format, quality, fos)
+            fos.close()
+        }
     }
 
     @JvmStatic

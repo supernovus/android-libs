@@ -18,7 +18,13 @@ abstract class HTTP {
      */
     val client: OkHttpClient
     protected val baseURL: String
-    open val TAG: String
+
+    /**
+     * Kotlin and its stupid fucking "final by default" design got even more inane
+     * since I updated this last and I can no longer have this assigned in the same
+     * way it used to be. So now it's this bloody mess instead. Hurray?
+     */
+    abstract var logTag: String
     @JvmField
     protected val logLevel: Int
 
@@ -35,7 +41,6 @@ abstract class HTTP {
     @JvmOverloads
     constructor(baseURL: String = "") {
         this.baseURL = baseURL
-        TAG = DEFAULT_TAG
         logLevel = DEFAULT_LOG_LEVEL
         client = OkHttpClient()
     }
@@ -47,7 +52,9 @@ abstract class HTTP {
      */
     protected constructor(httpBuilder: Builder<*>) {
         baseURL = httpBuilder.baseURL
-        TAG = httpBuilder.TAG
+        if (httpBuilder.logTag != null) {
+            logTag = httpBuilder.logTag!!
+        }
         logLevel = httpBuilder.logLevel
         if (httpBuilder.okClientBuilder == null) {
             client = OkHttpClient()
@@ -172,7 +179,7 @@ abstract class HTTP {
      */
     abstract class Builder<T : Builder<T>> {
         var baseURL = ""
-        var TAG = DEFAULT_TAG
+        var logTag: String? = null
         var logLevel = DEFAULT_LOG_LEVEL
         var okClientBuilder: OkHttpClient.Builder? = null
         protected abstract val `this`: T
@@ -183,7 +190,7 @@ abstract class HTTP {
         }
 
         fun setTag(tag: String): T {
-            TAG = tag
+            logTag = tag
             return `this`
         }
 
@@ -218,7 +225,6 @@ abstract class HTTP {
         const val LOG_WARNINGS = 2
         const val LOG_DEBUG = 3
         val TYPE_DEFAULT_FILE: MediaType = "application/octet-stream".toMediaType()
-        protected const val DEFAULT_TAG = "com.luminaryn.webservice"
         protected const val DEFAULT_LOG_LEVEL = LOG_ERRORS
 
         fun qsval (value: Any): String {

@@ -36,7 +36,7 @@ open class Installer (protected var context: Context,
         val parent = this
         sendRequest(request, object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.v(TAG,"Error downloading update APK file", e)
+                Log.v(this@Installer.logTag,"Error downloading update APK file", e)
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -50,7 +50,7 @@ open class Installer (protected var context: Context,
                         parent.installApk(download, installFlags)
                     }
                 } catch (e: IOException) {
-                    Log.v(TAG,"IOException thrown while downloading update", e)
+                    Log.v(this@Installer.logTag,"IOException thrown while downloading update", e)
                 }
             }
         })
@@ -68,7 +68,7 @@ open class Installer (protected var context: Context,
 
     fun installApkWithIntent(file: File) {
         if (provider == null) {
-            Log.e(TAG, "No provider initialized, this is not valid!")
+            Log.e(this@Installer.logTag, "No provider initialized, this is not valid!")
             return
         }
         val uri = FileProvider.getUriForFile(context.applicationContext, provider!!, file)

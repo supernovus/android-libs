@@ -35,6 +35,8 @@ open class JSON : HTTP {
     private val defaultRequestBody: RequestBody?
     private val useAbsoluteUris: Boolean
 
+    override var logTag: String = "com.luminaryn.webservice.JSON"
+
     interface JSONResponseHandler {
         fun handle(data: JSONObject)
     }
@@ -62,7 +64,7 @@ open class JSON : HTTP {
                 handler.handle(err)
             else {
                 if (logLevel >= LOG_ERRORS) {
-                    Log.e(TAG, "JSONCallback without closure or handler handled error: $err")
+                    Log.e(this@JSON.logTag, "JSONCallback without closure or handler handled error: $err")
                 }
             }
         }
@@ -76,7 +78,7 @@ open class JSON : HTTP {
             else
             {
                 if (logLevel >= LOG_WARNINGS) {
-                    Log.w(TAG, "JSONCallback without closure or handler received response: $jsr")
+                    Log.w(this@JSON.logTag, "JSONCallback without closure or handler received response: $jsr")
                 }
             }
         }
@@ -199,13 +201,13 @@ open class JSON : HTTP {
 
     private fun jsonBuildErr(e: JSONException) {
         if (logLevel >= LOG_ERRORS) {
-            Log.e(TAG, "JSON error when building error object: " + e.message)
+            Log.e(this@JSON.logTag, "JSON error when building error object: " + e.message)
         }
     }
 
     private fun nullBodyErr() {
         if (logLevel >= LOG_ERRORS) {
-            Log.e(TAG, "HTTP Body sent to webservice method was empty")
+            Log.e(this@JSON.logTag, "HTTP Body sent to webservice method was empty")
         }
     }
 
@@ -240,7 +242,7 @@ open class JSON : HTTP {
         try {
             val errors = JSONArray()
             if (msg.isEmpty()) {
-                if (logLevel >= LOG_WARNINGS) Log.w(TAG, "Empty message passed to errorMsg")
+                if (logLevel >= LOG_WARNINGS) Log.w(this@JSON.logTag, "Empty message passed to errorMsg")
                 errors.put("unknown_error")
             } else {
                 errors.put(msg)
@@ -264,7 +266,7 @@ open class JSON : HTTP {
             errorMsg(arrayOf("internal", "http_status", response.code.toString()))
         } else try {
             val body = response.body!!.string()
-            if (logLevel >= LOG_DEBUG) Log.d(TAG, "Response body: $body")
+            if (logLevel >= LOG_DEBUG) Log.d(this@JSON.logTag, "Response body: $body")
             JSONObject(body)
         } catch (e: IOException) {
             exceptionMsg(e,"response_body_parsing")
@@ -274,24 +276,7 @@ open class JSON : HTTP {
     }
 
     fun hashException(e: Throwable): HashMap<String, Any?> {
-        val errHash = HashMap<String, Any?>()
-        errHash["class"] = e.javaClass.canonicalName
-        errHash["message"] = e.message
-        val errList = ArrayList<HashMap<String, Any>>()
-        val stack = e.stackTrace
-        for (stackTraceElement in stack) {
-            val stackItem = HashMap<String, Any>()
-            if (stackTraceElement.className != null)
-                stackItem["class"] = stackTraceElement.className
-            if (stackTraceElement.fileName != null)
-                stackItem["file"] = stackTraceElement.fileName
-            stackItem["line"] = stackTraceElement.lineNumber
-            if (stackTraceElement.methodName != null)
-                stackItem["method"] = stackTraceElement.methodName
-            errList.add(stackItem)
-        }
-        errHash["stack"] = errList
-        return errHash
+        return Hashify.hashException(e)
     }
 
     class Builder : HTTP.Builder<Builder>() {

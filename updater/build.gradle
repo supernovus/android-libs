@@ -1,10 +1,10 @@
 apply from: common_library
 
 android {
-    namespace 'com.luminaryn.updater'
+    namespace = "com.luminaryn.updater"
 }
 
 dependencies {
-    implementation project(':common')
-    implementation project(':webservice')
+    implementation(project(":common"))
+    implementation(project(":webservice"))
 }
